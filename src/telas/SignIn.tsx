@@ -1,29 +1,87 @@
 import React, {useContext, useEffect, useState} from 'react';
-import {Alert, Image, ScrollView, StyleSheet, View} from 'react-native';
-import {Button, Text, TextInput, useTheme} from 'react-native-paper';
-import {SafeAreaView} from 'react-native-safe-area-context';
+import {Image, SafeAreaView, ScrollView, StyleSheet, View} from 'react-native';
+import {Button, Dialog, Divider, Text, TextInput, useTheme} from 'react-native-paper';
 import {AuthContext} from '../context/AuthProvider';
 import {Credencial} from '../model/types';
+import {Controller, useForm} from 'react-hook-form';
+import {yupResolver} from '@hookform/resolvers/yup';
+import * as yup from 'yup';
+import {CommonActions} from '@react-navigation/native';
 
-export default function SignIn({navigation}: any) {
+const requiredMessage = 'Campo obrigatório';
+
+/*
+  /^
+  (?=.*\d)              // deve conter ao menos um dígito
+  (?=.*[a-z])           // deve conter ao menos uma letra minúscula
+  (?=.*[A-Z])           // deve conter ao menos uma letra maiúscula
+  (?=.*[$*&@#])         // deve conter ao menos um caractere especial
+  [0-9a-zA-Z$*&@#]{8,}  // deve conter ao menos 8 dos caracteres mencionados
+$/
+*/
+const schema = yup
+  .object()
+  .shape({
+    email: yup
+      .string()
+      .required(requiredMessage)
+      .matches(/\S+@\S+\.\S+/, 'Email inválido'),
+    senha: yup
+      .string()
+      .required(requiredMessage)
+      .matches(
+        /^(?=.*\d)(?=.*[A-Z])(?=.*[a-z])(?=.*[$*&@#])[0-9a-zA-Z$*&@#]{8,}$/,
+        'A senha deve conter ao menos uma letra maiúscula, uma letra minúscula, um númeral, um caractere especial e um total de 8 caracteres',
+      ),
+  })
+  .required();
+
+function SignIn({navigation}: any) {
   const theme = useTheme();
-  const [credencial, setCredencial] = useState<Credencial>({
-    email: '',
-    senha: '',
+  const {
+    control,
+    handleSubmit,
+    register,
+    formState: {errors},
+  } = useForm<any>({
+    defaultValues: {
+      email: '',
+      senha: '',
+    },
+    mode: 'onSubmit',
+    resolver: yupResolver(schema),
   });
+
+  const [exibirSenha, setExibirSenha] = useState(true);
+  const [logando, setLogando] = useState(false);
+  const [dialogVisivel, setDialogVisivel] = useState(false);
+  const [mensagemErro, setMensagemErro] = useState('');
   const {signIn} = useContext<any>(AuthContext);
 
   useEffect(() => {
-    console.log('Credencial', credencial);
-  });
+    if (dialogVisivel) {
+      setLogando(false);
+    }
+  }, [dialogVisivel]);
 
-  async function entrar() {
-    console.log('Entrar', credencial);
-    const mensagem = await signIn(credencial);
+  useEffect(() => {
+    register('email');
+    register('senha');
+  }, [register]);
+
+  async function onSubmit(data: Credencial) {
+    setLogando(true);
+    const mensagem = await signIn(data);
     if (mensagem === 'ok') {
-      navigation.navigate('Home');
+      navigation.dispatch(
+        CommonActions.reset({
+          index: 0,
+          routes: [{name: 'Home'}],
+        }),
+      );
     } else {
-      Alert.alert('Erro', mensagem);
+      setMensagemErro(mensagem);
+      setDialogVisivel(true);
     }
   }
 
@@ -35,40 +93,108 @@ export default function SignIn({navigation}: any) {
       }}>
       <ScrollView>
         <>
-          <Image style={styles.image} source={require('../assets/LOGO.png')} />
-          <TextInput
-            style={styles.textinput}
-            value={credencial.email}
-            onChangeText={t => setCredencial({...credencial, email: t})}
-            autoCapitalize="none"
-            mode="outlined"
-            label="Email"
-            placeholder="Digite seu email"
-            right={<TextInput.Icon icon="email" />}
+          <Image style={styles.image} source={require('../assets/images/LOGO.png')} />
+          <Controller
+            control={control}
+            render={({field: {onChange, onBlur, value}}) => (
+              <TextInput
+                style={styles.textinput}
+                autoCapitalize="none"
+                mode="outlined"
+                label="Email"
+                placeholder="Digite seu email"
+                onBlur={onBlur}
+                onChangeText={onChange}
+                value={value}
+                right={<TextInput.Icon icon="email" />}
+              />
+            )}
+            name="email"
           />
-          <TextInput
-            style={styles.textinput}
-            value={credencial.senha}
-            onChangeText={t => setCredencial({...credencial, senha: t})}
-            autoCapitalize="none"
-            mode="outlined"
-            label="Senha"
-            placeholder="Digite sua senha"
-            secureTextEntry
-            right={<TextInput.Icon icon="eye" />}
+
+          {errors.email && (
+            <Text style={{...styles.textError, color: theme.colors.error}}>
+              {errors.email?.message?.toString()}
+            </Text>
+          )}
+
+          <Controller
+            control={control}
+            rules={{
+              required: true,
+            }}
+            render={({field: {onChange, onBlur, value}}) => (
+              <TextInput
+                style={styles.textinput}
+                autoCapitalize="none"
+                returnKeyLabel="go"
+                mode="outlined"
+                label="Senha"
+                placeholder="Digite sua senha"
+                onBlur={onBlur}
+                onChangeText={onChange}
+                value={value}
+                secureTextEntry={exibirSenha}
+                right={
+                  <TextInput.Icon
+                    icon="eye"
+                    color={exibirSenha ? theme.colors.onBackground : theme.colors.error}
+                    onPress={() => setExibirSenha(previus => !previus)}
+                  />
+                }
+              />
+            )}
+            name="senha"
           />
-          <Text style={styles.textEsqueceuSenha}>Esqueceu sua senha?</Text>
-          <Button style={styles.button} mode="contained" onPress={entrar}>
-            Entrar
+
+          {errors.senha && (
+            <Text style={{...styles.textError, color: theme.colors.error}}>
+              {errors.senha?.message?.toString()}
+            </Text>
+          )}
+
+          <Text
+            style={{...styles.textEsqueceuSenha, color: theme.colors.tertiary}}
+            variant="labelMedium"
+            onPress={() => navigation.navigate('EsqueceuSenha')}>
+            Esqueceu sua senha?
+          </Text>
+          <Button
+            style={styles.button}
+            mode="contained"
+            onPress={handleSubmit(onSubmit)}
+            loading={logando}
+            disabled={logando}>
+            {!logando ? 'Entrar' : 'Entrando'}
           </Button>
+
+          <Divider />
           <View style={styles.divCadastro}>
-            <Text style={styles.textCadastro}>Cadastrar-se?</Text>
+            <Text variant="labelMedium">Não tem uma conta?</Text>
+            <Text
+              style={{...styles.textCadastro, color: theme.colors.tertiary}}
+              variant="labelMedium"
+              onPress={() => navigation.navigate('SignUp')}>
+              {' '}
+              Cadastre-se
+            </Text>
           </View>
         </>
       </ScrollView>
+      <Dialog visible={dialogVisivel} onDismiss={() => setDialogVisivel(false)}>
+        <Dialog.Icon icon="alert-circle-outline" size={60} />
+        <Dialog.Title style={styles.textDialog}>Erro</Dialog.Title>
+        <Dialog.Content>
+          <Text style={styles.textDialog} variant="bodyLarge">
+            {mensagemErro}
+          </Text>
+        </Dialog.Content>
+      </Dialog>
     </SafeAreaView>
   );
 }
+
+export default SignIn;
 
 const styles = StyleSheet.create({
   container: {
@@ -86,7 +212,7 @@ const styles = StyleSheet.create({
   textinput: {
     width: 350,
     height: 50,
-    marginBottom: 20,
+    marginTop: 20,
     backgroundColor: 'transparent',
   },
   textEsqueceuSenha: {
@@ -97,9 +223,18 @@ const styles = StyleSheet.create({
     marginTop: 50,
     marginBottom: 30,
   },
+
+  textError: {
+    width: 350,
+  },
+
   divCadastro: {
     marginTop: 20,
     flexDirection: 'row',
     justifyContent: 'center',
+  },
+
+  textDialog: {
+    textAlign: 'center',
   },
 });
