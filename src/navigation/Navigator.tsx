@@ -3,49 +3,59 @@ import {NavigationContainer} from '@react-navigation/native';
 import {createNativeStackNavigator} from '@react-navigation/native-stack';
 import React from 'react';
 import SignIn from '../telas/SignIn';
-import Home from '../telas/Home';
 import {Icon, useTheme} from 'react-native-paper';
 import {createBottomTabNavigator} from '@react-navigation/bottom-tabs';
 import {StatusBar} from 'react-native';
 import Preload from '../telas/Preload';
 import SignUp from '../telas/SignUp';
+import RecuperarSenha from '../telas/RecuperarSenha';
+import Responsavel from '../telas/Responsavel';
+import Menu from '../telas/Menu';
+import Perfil from '../telas/PerfilTela';
 
 const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
 
-function AuthStack() {
-  return (
-    <Stack.Navigator
-      initialRouteName="Preload"
-      screenOptions={{
-        headerShown: false,
-      }}>
-      <Stack.Screen name="Preload" component={Preload} />
-      <Stack.Screen name="SignIn" component={SignIn} />
-      <Stack.Screen name="SignUp" component={SignUp} />
-    </Stack.Navigator>
-  );
-}
+const AuthStack = () => (
+  <Stack.Navigator
+    initialRouteName="Preload"
+    screenOptions={{
+      headerShown: false,
+    }}>
+    <Stack.Screen name="Preload" component={Preload} />
+    <Stack.Screen name="SignIn" component={SignIn} />
+    <Stack.Screen name="SignUp" component={SignUp} />
+    <Stack.Screen name="RecuperarSenha" component={RecuperarSenha} />
+  </Stack.Navigator>
+);
 
-function AppStack() {
+const AppStack = () => {
   const theme = useTheme();
   return (
     <Tab.Navigator
-      initialRouteName="Home"
+      initialRouteName="Responsavel"
       screenOptions={{
         headerShown: false,
       }}>
       <Tab.Screen
-        component={Home}
-        name="Home"
+        component={Responsavel}
+        name="Responsavel"
         options={{
-          tabBarLabel: 'Home',
+          tabBarLabel: 'Responsável',
           tabBarIcon: () => <Icon source="account-group" color={theme.colors.primary} size={20} />,
+        }}
+      />
+      <Tab.Screen
+        component={Menu}
+        name="Menu"
+        options={{
+          tabBarLabel: 'Menu',
+          tabBarIcon: () => <Icon source="menu" color={theme.colors.primary} size={20} />,
         }}
       />
     </Tab.Navigator>
   );
-}
+};
 
 export default function Navigator() {
   const theme = useTheme();
@@ -60,6 +70,14 @@ export default function Navigator() {
         }}>
         <Stack.Screen name="AuthStack" component={AuthStack} />
         <Stack.Screen name="AppStack" component={AppStack} />
+        <Stack.Screen
+          component={Responsavel}
+          name="Responsavel"
+          options={{
+            presentation: 'modal',
+          }}
+        />
+        <Stack.Screen name="Perfil" component={Perfil}/>
       </Stack.Navigator>
     </NavigationContainer>
   );

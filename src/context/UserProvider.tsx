@@ -1,15 +1,15 @@
 import {AuthContext} from './AuthProvider';
 import {Usuario} from '../model/usuario';
-import {Perfil} from '../model/Perfil';
 // import ImageResizer from '@babel/tech/react-native-image-resizer';
-import auth, { signOut } from '@react-native-firebase/auth';
+import auth from '@react-native-firebase/auth';
 import firestore from '@react-native-firebase/firestore';
-import React, {createContext, useContext} from 'react';
+import React, {createContext, useContext, useState} from 'react';
 
 export const UserContext = createContext({});
 
 export const UserProvider = ({children}: any) => {
   const {setUserAuth} = useContext<any>(AuthContext);
+  const [user, setUser] = useState(null);
 
   async function update(usuario: Usuario): Promise<string> {
     try {
@@ -30,6 +30,7 @@ export const UserProvider = ({children}: any) => {
         .doc(auth().currentUser?.uid)
         .set(usuarioFirestore, {merge: true});
       const usuarioAtualizado = await getUser();
+      setUser(usuarioAtualizado);
       setUserAuth(usuarioAtualizado);
       return 'ok';
     } catch (e) {
@@ -75,7 +76,7 @@ export const UserProvider = ({children}: any) => {
     try {
       await firestore().collection('usuarios').doc(uid).delete();
       await auth().currentUser?.delete();
-      await signOut();
+      //await signOut();
       return 'ok';
     } catch (e) {
       console.error(e);
@@ -90,15 +91,21 @@ export const UserProvider = ({children}: any) => {
         const userData = doc.data();
         if (userData) {
           userData.codusuario = auth().currentUser?.uid;
+          setUser(userData);
           return userData;
         }
       }
 
       return null;
     } catch (e) {
+      console.error('Erro ao obter usuário:', e);
       return null;
     }
   }
 
-  return <UserContext.Provider value={{update, del, getUser}}>{children}</UserContext.Provider>;
+  return (
+    <UserContext.Provider value={{user, setUser, update, del, getUser}}>
+      {children}
+    </UserContext.Provider>
+  );
 };

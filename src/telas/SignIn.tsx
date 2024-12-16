@@ -70,13 +70,14 @@ function SignIn({navigation}: any) {
   }, [register]);
 
   async function onSubmit(data: Credencial) {
+    console.log(JSON.stringify(data));
     setLogando(true);
     const mensagem = await signIn(data);
     if (mensagem === 'ok') {
       navigation.dispatch(
         CommonActions.reset({
           index: 0,
-          routes: [{name: 'Home'}],
+          routes: [{name: 'Preload'}],
         }),
       );
     } else {
