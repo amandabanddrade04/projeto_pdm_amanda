@@ -1,20 +1,18 @@
-import {Perfil} from './perfil';
-import {Usuario} from './usuario';
+import { Perfil } from "./perfil";
+import { Usuario } from "./Usuario";
 
 export class Responsavel extends Usuario {
-  public perfil: Perfil;
-  constructor(
-    codusuario: string,
-    nome: string,
-    email: string,
-    cpf: string,
-    datanasc: string,
-    telefone: string,
-    senha: string,
-    urlFoto: string,
-    perfil: Perfil,
-  ) {
-    super(codusuario, nome, email, cpf, datanasc, telefone, senha, urlFoto, perfil);
-    this.perfil = perfil;
-  }
+    public perfil: Perfil;
+    constructor(
+        uid: string,
+        nome: string,
+        email: string,
+        senha: string,
+        urlFoto: string,
+        perfil: Perfil,
+    ) {
+        super(uid, nome, email, senha, urlFoto, perfil);
+        this.perfil = perfil;
+    }
+
 }

@@ -70,7 +70,6 @@ function SignIn({navigation}: any) {
   }, [register]);
 
   async function onSubmit(data: Credencial) {
-    console.log(JSON.stringify(data));
     setLogando(true);
     const mensagem = await signIn(data);
     if (mensagem === 'ok') {
@@ -87,11 +86,7 @@ function SignIn({navigation}: any) {
   }
 
   return (
-    <SafeAreaView
-      style={{
-        ...styles.container,
-        backgroundColor: theme.colors.background,
-      }}>
+    <SafeAreaView style={{...styles.container, backgroundColor: theme.colors.background}}>
       <ScrollView>
         <>
           <Image style={styles.image} source={require('../assets/images/LOGO.png')} />

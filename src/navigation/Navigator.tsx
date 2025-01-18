@@ -8,10 +8,13 @@ import {createBottomTabNavigator} from '@react-navigation/bottom-tabs';
 import {StatusBar} from 'react-native';
 import Preload from '../telas/Preload';
 import SignUp from '../telas/SignUp';
-import RecuperarSenha from '../telas/RecuperarSenha';
-import Responsavel from '../telas/Responsavel';
+import EsqueceuSenha from '../telas/EsqueceuSenha';
 import Menu from '../telas/Menu';
 import Perfil from '../telas/PerfilTela';
+import AlteraSenha from '../telas/AlteraSenha';
+import TarefaTela from '../telas/TarefaTela';
+import Dependentes from '../telas/Dependentes';
+import DependenteTela from '../telas/DependenteTela';
 
 const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
@@ -25,7 +28,7 @@ const AuthStack = () => (
     <Stack.Screen name="Preload" component={Preload} />
     <Stack.Screen name="SignIn" component={SignIn} />
     <Stack.Screen name="SignUp" component={SignUp} />
-    <Stack.Screen name="RecuperarSenha" component={RecuperarSenha} />
+    <Stack.Screen name="EsqueceuSenha" component={EsqueceuSenha} />
   </Stack.Navigator>
 );
 
@@ -33,18 +36,35 @@ const AppStack = () => {
   const theme = useTheme();
   return (
     <Tab.Navigator
-      initialRouteName="Responsavel"
+      initialRouteName="Dependentes"
       screenOptions={{
+        tabBarActiveTintColor: theme.colors.primary,
+        tabBarInactiveTintColor: 'gray',
         headerShown: false,
+        tabBarStyle: {backgroundColor: theme.colors.surface},
       }}>
       <Tab.Screen
-        component={Responsavel}
-        name="Responsavel"
+        component={Dependentes}
+        name="Dependentes"
         options={{
-          tabBarLabel: 'Responsável',
-          tabBarIcon: () => <Icon source="account-group" color={theme.colors.primary} size={20} />,
+          tabBarLabel: 'Dependentes',
+          tabBarIcon: () => (
+            <Icon source="account-tie-hat" color={theme.colors.primary} size={20} />
+          ),
         }}
       />
+
+      <Tab.Screen
+        component={TarefaTela}
+        name="Tarefas"
+        options={{
+          tabBarLabel: 'Tarefas',
+          tabBarIcon: () => (
+            <Icon source="office-building-outline" color={theme.colors.primary} size={20} />
+          ),
+        }}
+      />
+
       <Tab.Screen
         component={Menu}
         name="Menu"
@@ -62,7 +82,7 @@ export default function Navigator() {
 
   return (
     <NavigationContainer>
-      <StatusBar backgroundColor={theme.colors.primary} />
+      <StatusBar backgroundColor={theme.dark ? theme.colors.surface : theme.colors.primary} />
       <Stack.Navigator
         initialRouteName="AuthStack"
         screenOptions={{
@@ -71,13 +91,15 @@ export default function Navigator() {
         <Stack.Screen name="AuthStack" component={AuthStack} />
         <Stack.Screen name="AppStack" component={AppStack} />
         <Stack.Screen
-          component={Responsavel}
-          name="Responsavel"
+          component={TarefaTela}
+          name="TarefaTela"
           options={{
             presentation: 'modal',
           }}
         />
-        <Stack.Screen name="Perfil" component={Perfil}/>
+        <Stack.Screen component={Perfil} name="Perfil" />
+        <Stack.Screen component={AlteraSenha} name="AlteraSenha" />
+        <Stack.Screen component={DependenteTela} name="DependenteTela" />
       </Stack.Navigator>
     </NavigationContainer>
   );

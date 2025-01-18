@@ -4,17 +4,14 @@ import {Usuario} from './usuario';
 export class Dependente extends Usuario {
   public perfil: Perfil;
   constructor(
-    codusuario: string,
+    uid: string,
     nome: string,
     email: string,
-    cpf: string,
-    datanasc: string,
-    telefone: string,
     senha: string,
     urlFoto: string,
     perfil: Perfil,
   ) {
-    super(codusuario, nome, email, cpf, datanasc, telefone, senha, urlFoto, perfil);
+    super(uid, nome, email, senha, urlFoto, perfil);
     this.perfil = perfil;
   }
 }

@@ -73,6 +73,26 @@ export const AuthProvider = ({children}: any) => {
     }
   }
 
+  async function recuperarSenha(email: string): Promise<string> {
+    try {
+      await auth().sendPasswordResetEmail(email);
+      return 'ok';
+    } catch (e) {
+      console.error(e);
+      return launchServerMessageErro(e);
+    }
+  }
+
+  async function alterarSenha(senha: string) {
+    try {
+      await auth().currentUser?.updatePassword(senha);
+      return 'ok';
+    } catch (e) {
+      console.error('updatePassword: ' + e);
+      return launchServerMessageErro(e);
+    }
+  }
+
   //função utilitária
   function launchServerMessageErro(e: any): string {
     switch (e.code) {
@@ -102,6 +122,8 @@ export const AuthProvider = ({children}: any) => {
         userAuth,
         signOut,
         recuperaCredencialdaCache,
+        recuperarSenha,
+        alterarSenha,
       }}>
       {children}
     </AuthContext.Provider>

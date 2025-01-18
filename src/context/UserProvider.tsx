@@ -1,24 +1,81 @@
 import {AuthContext} from './AuthProvider';
 import {Usuario} from '../model/usuario';
-// import ImageResizer from '@babel/tech/react-native-image-resizer';
+import ImageResizer from '@bam.tech/react-native-image-resizer';
 import auth from '@react-native-firebase/auth';
 import firestore from '@react-native-firebase/firestore';
-import React, {createContext, useContext, useState} from 'react';
+import React, {createContext, useContext, useEffect, useState} from 'react';
+import storage from '@react-native-firebase/storage';
+import {Perfil} from '../model/Perfil';
 
 export const UserContext = createContext({});
 
 export const UserProvider = ({children}: any) => {
   const {setUserAuth} = useContext<any>(AuthContext);
-  const [user, setUser] = useState(null);
+  const [responsaveis, setResponsaveis] = useState<Usuario[]>([]);
+  const [dependentes, setDependentes] = useState<Usuario[]>([]);
 
-  async function update(usuario: Usuario): Promise<string> {
+  useEffect(() => {
+    const listenerResponsaveis = firestore()
+      .collection('usuarios')
+      .where('perfil', '==', Perfil.Responsavel)
+      .orderBy('nome')
+      .onSnapshot(snapShot => {
+        //console.log(snapShot);
+        //console.log(snapShot._docs);
+        if (snapShot) {
+          let data: Usuario[] = [];
+          snapShot.forEach(doc => {
+            data.push({
+              uid: doc.id,
+              nome: doc.data().nome,
+              urlFoto: doc.data().urlFoto,
+              perfil: doc.data().perfil,
+              email: doc.data().email,
+              senha: doc.data().senha,
+            });
+          });
+          setResponsaveis(data);
+        }
+      });
+
+    const listenerDependentes = firestore()
+      .collection('usuarios')
+      .where('perfil', '==', Perfil.Dependente)
+      .orderBy('nome')
+      .onSnapshot(snapShot => {
+        //console.log(snapShot);
+        //console.log(snapShot._docs);
+        if (snapShot) {
+          let data: Usuario[] = [];
+          snapShot.forEach(doc => {
+            data.push({
+              uid: doc.id,
+              email: doc.data().email,
+              nome: doc.data().nome,
+              urlFoto: doc.data().urlFoto,
+              senha: doc.data().senha,
+              perfil: doc.data().perfil,
+            });
+          });
+          setDependentes(data);
+        }
+      });
+
+    return () => {
+      listenerResponsaveis();
+      listenerDependentes();
+    };
+  }, []);
+
+  async function update(usuario: Usuario, urlDevice: string): Promise<string> {
     try {
-      // if (urlDevice !== '') {
-      //     usuario.urlFoto = await sendImageToStorage(usuario.codusuario, urlDevice);
-      //     if (!usuario.urlFoto) {
-      //         return 'Erro ao enviar imagem para o Storage';
-      //     }
-      // }
+      console.log(urlDevice);
+      if (urlDevice !== '') {
+        usuario.urlFoto = await sendImageToStorage(usuario, urlDevice);
+        if (!usuario.urlFoto) {
+          return 'Erro ao enviar imagem para o Storage';
+        }
+      }
       const usuarioFirestore = {
         nome: usuario.nome,
         email: usuario.email,
@@ -30,53 +87,39 @@ export const UserProvider = ({children}: any) => {
         .doc(auth().currentUser?.uid)
         .set(usuarioFirestore, {merge: true});
       const usuarioAtualizado = await getUser();
-      setUser(usuarioAtualizado);
       setUserAuth(usuarioAtualizado);
       return 'ok';
     } catch (e) {
-      console.log(e);
       return 'Erro ao atualizar o usuário';
     }
   }
-  //     async function sendImageToStorage(
-  //         usuario: Usuario,
-  //         urlDevice: string,
-  //     ): Promise<string> {
-  //         let imageRedimencionada = await ImageResizer.createResizedImage(
-  //             urlDevice,
-  //             150,
-  //             200,
-  //             'PNG',
-  //             80,
-  //         );
+  async function sendImageToStorage(usuario: Usuario, urlDevice: string): Promise<string> {
+    let imageRedimencionada = await ImageResizer.createResizedImage(urlDevice, 150, 200, 'PNG', 80);
 
-  //         const pathToStorage = 'imagens/usuarios/${
-  //         Auth().currentUser?.codusuario
-  //         }/foto.png';
+    const pathToStorage = `imagens/usuarios/${auth().currentUser?.uid}/foto.png`;
 
-  //         let url: string | null = '';
-  //         const task = storage().ref(pathToStorage).putFile(imageRedimencionada.uri);
-  //         task.on('state_changed', taskSnapshot => {
-  //             console.log(
-  //                 `${taskSnapshot.bytesTransferred} transferred out of ${taskSnapshot.totalBytes}`,
-  //             );
-  //         });
+    let url: string | null = '';
+    const task = storage().ref(pathToStorage).putFile(imageRedimencionada.uri);
+    task.on('state_changed', taskSnapshot => {
+      // eslint-disable-next-line no-console
+      console.log(`${taskSnapshot.bytesTransferred} transferred out of ${taskSnapshot.totalBytes}`);
+    });
 
-  //         await task.then(async () => {
-  //             url = await storage().ref(pathToStorage).getDownloadURL();
-  //         });
+    await task.then(async () => {
+      url = await storage().ref(pathToStorage).getDownloadURL();
+    });
 
-  //         task.catch(e => {
-  //             console.error('UserProvider, sendImageToStorage', e);
-  //         });
-  //         return url;
-  // }
+    task.catch(e => {
+      console.error('UserProvider, sendImageToStorage', e);
+      url = null;
+    });
+    return url;
+  }
 
   async function del(uid: string): Promise<string> {
     try {
       await firestore().collection('usuarios').doc(uid).delete();
       await auth().currentUser?.delete();
-      //await signOut();
       return 'ok';
     } catch (e) {
       console.error(e);
@@ -91,7 +134,6 @@ export const UserProvider = ({children}: any) => {
         const userData = doc.data();
         if (userData) {
           userData.codusuario = auth().currentUser?.uid;
-          setUser(userData);
           return userData;
         }
       }
@@ -104,7 +146,7 @@ export const UserProvider = ({children}: any) => {
   }
 
   return (
-    <UserContext.Provider value={{user, setUser, update, del, getUser}}>
+    <UserContext.Provider value={{update, del, getUser, responsaveis, dependentes}}>
       {children}
     </UserContext.Provider>
   );

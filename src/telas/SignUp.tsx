@@ -19,6 +19,7 @@ const schema = yup
       .string()
       .required(requiredMessage)
       .matches(/\S+@\S+\.\S+/, 'Email inválido'),
+
     senha: yup
       .string()
       .required(requiredMessage)

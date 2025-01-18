@@ -1,7 +1,7 @@
 import {yupResolver} from '@hookform/resolvers/yup';
-import React, {useContext, useEffect, useState} from 'react';
+import React, {useContext, useState} from 'react';
 import {Controller, useForm} from 'react-hook-form';
-import {Alert, Image, ScrollView, StyleSheet, View} from 'react-native';
+import {Image, ScrollView, StyleSheet, View} from 'react-native';
 import {Button, Dialog, Text, TextInput, useTheme} from 'react-native-paper';
 import {SafeAreaView} from 'react-native-safe-area-context';
 import * as yup from 'yup';
@@ -9,6 +9,7 @@ import {AuthContext} from '../context/AuthProvider';
 import {UserContext} from '../context/UserProvider';
 import {Usuario} from '../model/Usuario';
 import {CommonActions} from '@react-navigation/native';
+import {ImageLibraryOptions, launchCamera, launchImageLibrary} from 'react-native-image-picker';
 
 const requiredMessage = 'Campo obrigatório';
 
@@ -20,6 +21,7 @@ const schema = yup
       .string()
       .required(requiredMessage)
       .matches(/\S+@\S+\.\S+/, 'Email inválido'),
+
     senha: yup
       .string()
       .required(requiredMessage)
@@ -40,7 +42,6 @@ export default function PerfilTela({navigation}: any) {
   const {
     control,
     handleSubmit,
-    register,
     formState: {errors},
   } = useForm<any>({
     defaultValues: {
@@ -56,18 +57,18 @@ export default function PerfilTela({navigation}: any) {
   const [dialogExcluirVisivel, setDialogExcluirVisivel] = useState(false);
   const [mensagem, setMensagem] = useState({tipo: '', mensagem: ''});
   const {update, del} = useContext<any>(UserContext);
+  const [urlDevice, setUrlDevice] = useState<string | undefined>('');
+  const [excluindo, setExcluindo] = useState(false);
+  const [atualizando, setAtualizando] = useState(false);
 
-  //TODO: verificar se o usuário está logado e pegar o uid dele
-  useEffect(() => {
-    register('nome');
-    register('email');
-    register('perfil');
-  }, [register]);
-
-  async function onSubmit(data: Usuario) {
-    console.log('Atualizar perfil');
+  async function atualizaPerfil(data: Usuario) {
     setRequisitando(true);
-    const msg = await update(data);
+    setAtualizando(true);
+    data.urlFoto = 'https://www.gravatar.com/avatar/205e460b479e2e5b48aec07710c08d50';
+
+    console.log(data);
+    console.log(urlDevice);
+    const msg = await update(data, urlDevice);
     if (msg === 'ok') {
       setMensagem({
         tipo: 'ok',
@@ -76,10 +77,12 @@ export default function PerfilTela({navigation}: any) {
       });
       setDialogErroVisivel(true);
       setRequisitando(false);
+      setAtualizando(false);
     } else {
       setMensagem({tipo: 'erro', mensagem: msg});
       setDialogErroVisivel(true);
       setRequisitando(false);
+      setAtualizando(false);
     }
   }
 
@@ -88,8 +91,9 @@ export default function PerfilTela({navigation}: any) {
   }
 
   async function excluirConta() {
-    setDialogExcluirVisivel(true); //TODO: ver pq não está abrindo o dialog
+    setDialogExcluirVisivel(false);
     setRequisitando(true);
+    setExcluindo(true);
     const msg = await del(userAuth.uid);
     if (msg === 'ok') {
       navigation.dispatch(
@@ -102,31 +106,70 @@ export default function PerfilTela({navigation}: any) {
       setMensagem({tipo: 'erro', mensagem: 'ops! algo deu errado'});
       setDialogErroVisivel(true);
       setRequisitando(false);
+      setExcluindo(false);
     }
   }
 
+  const buscaNaGaleria = () => {
+    const options: ImageLibraryOptions = {
+      mediaType: 'photo',
+    };
+    launchImageLibrary(options, response => {
+      if (response.errorCode) {
+        setMensagem({tipo: 'erro', mensagem: 'Ops! Erro ao buscar a imagem.'});
+      } else if (response.didCancel) {
+        setMensagem({tipo: 'ok', mensagem: 'Ok, você cancelou.'});
+      } else {
+        const path = response.assets?.[0].uri;
+        setUrlDevice(path);
+      }
+    });
+  };
+
+  function tiraFoto() {
+    const options: ImageLibraryOptions = {
+      mediaType: 'photo',
+    };
+    launchCamera(options, response => {
+      if (response.errorCode) {
+        setMensagem({tipo: 'ok', mensagem: 'Ops! Erro ao tirar foto'});
+      } else if (response.didCancel) {
+        setMensagem({tipo: 'ok', mensagem: 'Ok, você cancelou'});
+      } else {
+        const path = response.assets?.[0].uri;
+        setUrlDevice(path);
+      }
+    });
+  }
+
   return (
-    <SafeAreaView
-      style={{
-        ...styles.container,
-        backgroundColor: theme.colors.background,
-      }}>
+    <SafeAreaView style={{...styles.container, backgroundColor: theme.colors.background}}>
       <ScrollView>
         <>
-          <Image style={styles.image} source={require('../assets/images/LOGO.png')} />
+          <Image
+            style={styles.image}
+            source={
+              urlDevice !== ''
+                ? {uri: urlDevice}
+                : userAuth.urlFoto !== ''
+                ? {uri: userAuth.urlFoto}
+                : require('../assets/images/person.png')
+            }
+            loadingIndicatorSource={require('../assets/images/person.png')}
+          />
           <View style={styles.divButtonsImage}>
             <Button
               style={styles.buttonImage}
               mode="outlined"
               icon="image"
-              onPress={() => Alert.alert('Vamos ver isso em upload de imagens')}>
+              onPress={() => buscaNaGaleria()}>
               Galeria
             </Button>
             <Button
               style={styles.buttonImage}
               mode="outlined"
               icon="camera"
-              onPress={() => Alert.alert('Vamos ver isso em upload de imagens')}>
+              onPress={() => tiraFoto()}>
               Foto
             </Button>
           </View>
@@ -149,7 +192,7 @@ export default function PerfilTela({navigation}: any) {
             )}
             name="nome"
           />
-          {errors.email && (
+          {errors.nome && (
             <Text style={{...styles.textError, color: theme.colors.error}}>
               {errors.nome?.message?.toString()}
             </Text>
@@ -208,10 +251,10 @@ export default function PerfilTela({navigation}: any) {
           <Button
             style={styles.button}
             mode="contained"
-            onPress={handleSubmit(onSubmit)}
+            onPress={handleSubmit(() => console.log('===================================='))}
             loading={requisitando}
             disabled={requisitando}>
-            {!requisitando ? 'Atualizar' : 'Atualizando'}
+            {!atualizando ? 'Atualizar' : 'Atualizando'}
           </Button>
           <Button
             style={styles.buttonOthers}
@@ -219,14 +262,14 @@ export default function PerfilTela({navigation}: any) {
             onPress={handleSubmit(avisarDaExclusaoPermanente)}
             loading={requisitando}
             disabled={requisitando}>
-            {!requisitando ? 'Excluir' : 'Excluindo'}
+            {!excluindo ? 'Excluir' : 'Excluindo'}
           </Button>
         </>
       </ScrollView>
       <Dialog
         visible={dialogExcluirVisivel}
         onDismiss={() => {
-          setDialogErroVisivel(false);
+          setDialogExcluirVisivel(false);
         }}>
         <Dialog.Icon icon={'alert-circle-outline'} size={60} />
         <Dialog.Title style={styles.textDialog}>{'Ops!'}</Dialog.Title>

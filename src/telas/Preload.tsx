@@ -1,14 +1,14 @@
-/* eslint-disable react/no-unstable-nested-components */
 import {CommonActions} from '@react-navigation/native';
 import React, {useContext, useEffect, useState} from 'react';
 import {Image, StyleSheet, View} from 'react-native';
-import {Dialog, Text} from 'react-native-paper';
+import {Dialog, Text, useTheme} from 'react-native-paper';
 import auth from '@react-native-firebase/auth';
 import {AuthContext} from '../context/AuthProvider';
 import {UserContext} from '../context/UserProvider';
 // import {Usuario} from '../model/Usuario';
 
 export default function Preload({navigation}: any) {
+  const theme = useTheme();
   const {setUserAuth, recuperaCredencialdaCache, SignIn} = useContext<any>(AuthContext);
   const {getUser} = useContext<any>(UserContext);
   const [dialogVisivel, setDialogVisivel] = useState(false);
@@ -17,17 +17,13 @@ export default function Preload({navigation}: any) {
   useEffect(() => {
     // Liga o listener e fica escutando o estado da autenticação no serviço Auth do Firebase
     const unsubscribe = auth().onAuthStateChanged(async authUser => {
-      console.log('onAuthStateChanged:', authUser);
       if (authUser) {
         if (authUser.emailVerified) {
-          console.log('Email verificado');
           await buscaUsuario();
         } else {
-          console.log('Email não verificado');
           setDialogVisivel(true);
         }
       } else {
-        console.log('Nenhum usuário autenticado, chamando logar');
         await logar();
       }
     });
@@ -39,7 +35,6 @@ export default function Preload({navigation}: any) {
   async function buscaUsuario() {
     const usuario = await getUser();
     if (usuario) {
-      console.log('Usuário autenticado:',usuario);
       setUserAuth(usuario);
       navigation.dispatch(
         CommonActions.reset({
@@ -52,18 +47,14 @@ export default function Preload({navigation}: any) {
 
   async function logar() {
     const credencial = await recuperaCredencialdaCache();
-    console.log('Credencial recuperada:', credencial);
 
     if (credencial && credencial !== 'null') {
       try {
         const mensagem = await SignIn(credencial);
-        console.log('Resultado do SignIn:', mensagem);
 
         if (mensagem === 'ok') {
-          console.log('Login bem-sucedido');
           await buscaUsuario();
         } else {
-          console.log('SignIn falhou, redirecionando para SignIn');
           irParaSignIn();
         }
       } catch (error) {
@@ -71,7 +62,6 @@ export default function Preload({navigation}: any) {
         irParaSignIn();
       }
     } else {
-      console.log('Credencial inválida ou inexistente, redirecionando para SignIn');
       irParaSignIn();
     }
   }
@@ -87,7 +77,7 @@ export default function Preload({navigation}: any) {
   }
 
   return (
-    <View style={styles.container}>
+    <View style={{...styles.container, backgroundColor: theme.colors.background}}>
       <Image
         style={styles.imagem}
         source={require('../assets/images/LOGO.png')}
