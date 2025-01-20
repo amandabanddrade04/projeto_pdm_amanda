@@ -6,6 +6,8 @@ import {Button, Dialog, Text, TextInput, useTheme} from 'react-native-paper';
 import {SafeAreaView} from 'react-native-safe-area-context';
 import * as yup from 'yup';
 import {Dependente} from '../model/Dependente';
+import {Perfil} from '../model/Perfil';
+import firestore from '@react-native-firebase/firestore'; // Importação do Firestore
 
 const requiredMessage = 'Campo obrigatório';
 
@@ -20,50 +22,78 @@ const schema = yup
   })
   .required();
 
-export default function DependenteForm({route, navigation}: any) {
+export default function DependenteForm({navigation}: any) {
   const theme = useTheme();
-  const {dependente} = route.params;
+
   const {
     control,
     handleSubmit,
+    register,
     formState: {errors},
-    setValue,
   } = useForm<any>({
     defaultValues: {
-      nome: dependente?.nome || '',
-      email: dependente?.email || '',
+      nome: '',
+      email: '',
+      senha: '',
+      urlFoto: '',
+      Perfil: Perfil.Dependente,
     },
+    mode: 'onSubmit',
     resolver: yupResolver(schema),
   });
+
+  const [exibirSenha, setExibirSenha] = useState(true);
   const [requisitando, setRequisitando] = useState(false);
   const [dialogVisivel, setDialogVisivel] = useState(false);
   const [mensagem, setMensagem] = useState({tipo: '', mensagem: ''});
+  const [checked] = React.useState<Perfil>(Perfil.Responsavel);
 
   useEffect(() => {
-    if (dependente) {
-      setValue('nome', dependente.nome);
-      setValue('email', dependente.email);
-    }
-  }, [dependente, setValue]);
+    register('nome');
+    register('email');
+    register('senha');
+    register('urlFoto');
+    register('perfil');
+  }, [register]);
 
-  const onSubmit = async (data: Dependente) => {
-    setRequisitando(true);
+  // Função para salvar dependente no Firestore
+  async function salvarDependenteNoFirestore(data: Dependente): Promise<string> {
     try {
-      if (dependente) {
-        // Atualização de dependente
-        console.log('Atualizar dependente:', data);
-      } else {
-        // Cadastro de novo dependente
-        console.log('Cadastrar dependente:', data);
-      }
-      setMensagem({tipo: 'ok', mensagem: 'Dependente salvo com sucesso!'});
+      await firestore()
+        .collection('dependentes') // Nome da coleção no Firestore
+        .add({
+          nome: data.nome,
+          email: data.email,
+          senha: data.senha,
+          urlFoto: data.urlFoto,
+          perfil: data.perfil,
+        });
+      return 'ok'; // Retorna 'ok' em caso de sucesso
     } catch (error) {
-      setMensagem({tipo: 'erro', mensagem: 'Erro ao salvar dependente!'});
-    } finally {
-      setDialogVisivel(true);
-      setRequisitando(false);
+      console.error(error);
+      return 'Erro ao salvar dependente no Firestore'; // Mensagem de erro
     }
-  };
+  }
+
+  async function onSubmit(data: Dependente) {
+    setRequisitando(true);
+    data.perfil = checked;
+
+    const msg: string = await salvarDependenteNoFirestore(data);
+
+    if (msg === 'ok') {
+      setMensagem({
+        tipo: 'ok',
+        mensagem:
+          'Show! Você foi cadastrado com sucesso. Verifique seu email para validar sua conta.',
+      });
+    } else {
+      setMensagem({tipo: 'erro', mensagem: msg});
+    }
+
+    setDialogVisivel(true);
+    setRequisitando(false);
+  }
 
   return (
     <SafeAreaView style={{...styles.container, backgroundColor: theme.colors.background}}>
@@ -112,6 +142,30 @@ export default function DependenteForm({route, navigation}: any) {
         {errors.email && (
           <Text style={{...styles.textError, color: theme.colors.error}}>
             {errors.email?.message?.toString()}
+          </Text>
+        )}
+        <Controller
+          control={control}
+          render={({field: {onChange, onBlur, value}}) => (
+            <TextInput
+              style={styles.textinput}
+              label="Senha"
+              placeholder="Digite sua senha"
+              mode="outlined"
+              autoCapitalize="none"
+              returnKeyType="next"
+              secureTextEntry={exibirSenha}
+              onBlur={onBlur}
+              onChangeText={onChange}
+              value={value}
+              right={<TextInput.Icon icon="eye" onPress={() => setExibirSenha(prev => !prev)} />}
+            />
+          )}
+          name="senha"
+        />
+        {errors.senha && (
+          <Text style={{...styles.textError, color: theme.colors.error}}>
+            {errors.senha?.message?.toString()}
           </Text>
         )}
 
