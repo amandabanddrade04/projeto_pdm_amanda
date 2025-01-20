@@ -80,7 +80,7 @@ export const UserProvider = ({children}: any) => {
         nome: usuario.nome,
         email: usuario.email,
         urlFoto: usuario.urlFoto,
-        Perfil: usuario.perfil,
+        perfil: usuario.perfil,
       };
       await firestore()
         .collection('usuarios')

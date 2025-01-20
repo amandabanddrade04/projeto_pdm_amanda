@@ -9,7 +9,7 @@ import {AuthContext} from '../context/AuthProvider';
 const requiredMessage = 'Campo obrigatório';
 
 const schema = yup.object().shape({
-  name: yup
+  email: yup
     .string()
     .required(requiredMessage)
     .matches(/\S+@\S+\.\S+/, 'Email inválido'),

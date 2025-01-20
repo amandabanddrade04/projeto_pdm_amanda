@@ -1,5 +1,5 @@
 export enum Perfil {
-  Adm = 'Adm',
-  Responsavel = 'Responsavel',
-  Dependente = 'Dependente',
+  Adm = 'adm',
+  Responsavel = 'responsavel',
+  Dependente = 'dependente',
 }

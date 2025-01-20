@@ -251,7 +251,7 @@ export default function PerfilTela({navigation}: any) {
           <Button
             style={styles.button}
             mode="contained"
-            onPress={handleSubmit(() => console.log('===================================='))}
+            onPress={handleSubmit(atualizaPerfil)}
             loading={requisitando}
             disabled={requisitando}>
             {!atualizando ? 'Atualizar' : 'Atualizando'}
