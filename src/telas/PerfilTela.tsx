@@ -1,15 +1,15 @@
 import {yupResolver} from '@hookform/resolvers/yup';
+import {CommonActions} from '@react-navigation/native';
 import React, {useContext, useState} from 'react';
 import {Controller, useForm} from 'react-hook-form';
 import {Image, ScrollView, StyleSheet, View} from 'react-native';
+import {ImageLibraryOptions, launchCamera, launchImageLibrary} from 'react-native-image-picker';
 import {Button, Dialog, Text, TextInput, useTheme} from 'react-native-paper';
 import {SafeAreaView} from 'react-native-safe-area-context';
 import * as yup from 'yup';
 import {AuthContext} from '../context/AuthProvider';
 import {UserContext} from '../context/UserProvider';
 import {Usuario} from '../model/Usuario';
-import {CommonActions} from '@react-navigation/native';
-import {ImageLibraryOptions, launchCamera, launchImageLibrary} from 'react-native-image-picker';
 
 const requiredMessage = 'Campo obrigatório';
 
@@ -22,17 +22,7 @@ const schema = yup
       .required(requiredMessage)
       .matches(/\S+@\S+\.\S+/, 'Email inválido'),
 
-    senha: yup
-      .string()
-      .required(requiredMessage)
-      .matches(
-        /^(?=.*\d)(?=.*[A-Z])(?=.*[a-z])(?=.*[$*&@#])[0-9a-zA-Z$*&@#]{8,}$/,
-        'A senha deve conter ao menos uma letra maiúscula, uma letra minúscula, um númeral, um caractere especial e um total de 8 caracteres',
-      ),
-    confirmar_senha: yup
-      .string()
-      .required(requiredMessage)
-      .equals([yup.ref('senha')], 'As senhas não conferem'),
+    perfil: yup.string().required(requiredMessage),
   })
   .required();
 
@@ -62,28 +52,31 @@ export default function PerfilTela({navigation}: any) {
   const [atualizando, setAtualizando] = useState(false);
 
   async function atualizaPerfil(data: Usuario) {
-    setRequisitando(true);
-    setAtualizando(true);
-    data.urlFoto = 'https://www.gravatar.com/avatar/205e460b479e2e5b48aec07710c08d50';
-
+    console.log('chamou atualizaPerfil');
     console.log(data);
-    console.log(urlDevice);
-    const msg = await update(data, urlDevice);
-    if (msg === 'ok') {
-      setMensagem({
-        tipo: 'ok',
-        mensagem:
-          'Show! Seu perfil foi atualizado com sucesso. Verifique seu email para validar sua conta.',
-      });
-      setDialogErroVisivel(true);
-      setRequisitando(false);
-      setAtualizando(false);
-    } else {
-      setMensagem({tipo: 'erro', mensagem: msg});
-      setDialogErroVisivel(true);
-      setRequisitando(false);
-      setAtualizando(false);
-    }
+
+    // setRequisitando(true);
+    // setAtualizando(true);
+    // data.urlFoto = 'https://www.gravatar.com/avatar/205e460b479e2e5b48aec07710c08d50';
+
+    // console.log(data);
+    // console.log(urlDevice);
+    // const msg = await update(data, urlDevice);
+    // if (msg === 'ok') {
+    //   setMensagem({
+    //     tipo: 'ok',
+    //     mensagem:
+    //       'Show! Seu perfil foi atualizado com sucesso. Verifique seu email para validar sua conta.',
+    //   });
+    //   setDialogErroVisivel(true);
+    //   setRequisitando(false);
+    //   setAtualizando(false);
+    // } else {
+    //   setMensagem({tipo: 'erro', mensagem: msg});
+    //   setDialogErroVisivel(true);
+    //   setRequisitando(false);
+    //   setAtualizando(false);
+    // }
   }
 
   function avisarDaExclusaoPermanente() {
@@ -203,6 +196,7 @@ export default function PerfilTela({navigation}: any) {
             render={({field: {onChange, onBlur, value}}) => (
               <TextInput
                 style={styles.textinput}
+                disabled
                 label="Email"
                 placeholder="Digite seu email"
                 mode="outlined"
