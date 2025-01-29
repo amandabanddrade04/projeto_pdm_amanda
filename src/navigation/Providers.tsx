@@ -3,6 +3,7 @@ import {AuthProvider} from '../context/AuthProvider';
 import React from 'react';
 import Navigator from './Navigator';
 import {UserProvider} from '../context/UserProvider';
+import { DependenteProvider } from '../context/DependenteProvider';
 
 //Ampliando o tema padrão
 const themeLight = {
@@ -19,9 +20,11 @@ export default function Providers() {
   return (
     <AuthProvider>
       <UserProvider>
-        <PaperProvider theme={temaDoApp ? themeLight : themeDark}>
-          <Navigator />
-        </PaperProvider>
+        <DependenteProvider>
+          <PaperProvider theme={temaDoApp ? themeLight : themeDark}>
+            <Navigator />
+          </PaperProvider>
+        </DependenteProvider>
       </UserProvider>
     </AuthProvider>
   );

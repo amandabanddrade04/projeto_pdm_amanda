@@ -19,6 +19,7 @@ import DependenteTela from '../telas/DependenteTela';
 const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
 
+// Navegação de autenticação
 const AuthStack = () => (
   <Stack.Navigator
     initialRouteName="Preload"
@@ -32,6 +33,7 @@ const AuthStack = () => (
   </Stack.Navigator>
 );
 
+// Navegação do aplicativo principal com abas
 const AppStack = () => {
   const theme = useTheme();
   return (
@@ -77,6 +79,7 @@ const AppStack = () => {
   );
 };
 
+// Navegação principal
 export default function Navigator() {
   const theme = useTheme();
 
@@ -97,9 +100,16 @@ export default function Navigator() {
             presentation: 'modal',
           }}
         />
+
+        <Stack.Screen
+          component={DependenteTela}
+          name="DependenteTela"
+          options={{
+            presentation: 'modal',
+          }}
+        />
         <Stack.Screen component={Perfil} name="Perfil" />
         <Stack.Screen component={AlteraSenha} name="AlteraSenha" />
-        <Stack.Screen component={DependenteTela} name="DependenteTela" />
       </Stack.Navigator>
     </NavigationContainer>
   );

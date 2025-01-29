@@ -1,7 +1,6 @@
 import firestore from '@react-native-firebase/firestore';
 import React, {createContext, useEffect, useState} from 'react';
-import { Tarefa } from '../model/Tarefa';
-
+import {Tarefa} from '../model/Tarefa';
 
 export const TarefaContext = createContext({});
 
