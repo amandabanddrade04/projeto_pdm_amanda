@@ -52,31 +52,34 @@ export default function PerfilTela({navigation}: any) {
   const [atualizando, setAtualizando] = useState(false);
 
   async function atualizaPerfil(data: Usuario) {
-    console.log('chamou atualizaPerfil');
-    console.log(data);
-
     setRequisitando(true);
     setAtualizando(true);
     data.urlFoto = 'https://www.gravatar.com/avatar/205e460b479e2e5b48aec07710c08d50';
 
     console.log(data);
-    console.log(urlDevice);
-    const msg = await update(data, urlDevice);
-    if (msg === 'ok') {
-      setMensagem({
-        tipo: 'ok',
-        mensagem:
-          'Show! Seu perfil foi atualizado com sucesso. Verifique seu email para validar sua conta.',
-      });
-      setDialogErroVisivel(true);
-      setRequisitando(false);
-      setAtualizando(false);
-    } else {
-      setMensagem({tipo: 'erro', mensagem: msg});
-      setDialogErroVisivel(true);
-      setRequisitando(false);
-      setAtualizando(false);
-    }
+
+    // setRequisitando(true);
+    // setAtualizando(true);
+    // data.urlFoto = 'https://www.gravatar.com/avatar/205e460b479e2e5b48aec07710c08d50';
+
+    // console.log(data);
+    // console.log(urlDevice);
+    // const msg = await update(data, urlDevice);
+    // if (msg === 'ok') {
+    //   setMensagem({
+    //     tipo: 'ok',
+    //     mensagem:
+    //       'Show! Seu perfil foi atualizado com sucesso. Verifique seu email para validar sua conta.',
+    //   });
+    //   setDialogErroVisivel(true);
+    //   setRequisitando(false);
+    //   setAtualizando(false);
+    // } else {
+    //   setMensagem({tipo: 'erro', mensagem: msg});
+    //   setDialogErroVisivel(true);
+    //   setRequisitando(false);
+    //   setAtualizando(false);
+    // }
   }
 
   function avisarDaExclusaoPermanente() {
