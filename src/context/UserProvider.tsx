@@ -145,8 +145,26 @@ export const UserProvider = ({children}: any) => {
     }
   }
 
+  async function atribuirTarefaAoDependente(idDependente: string, tarefa: any): Promise<string> {
+    try {
+      await firestore()
+        .collection('tarefas')
+        .add({
+          ...tarefa,
+          id_dependente: idDependente,
+          concluida: false,
+          dataCriacao: firestore.FieldValue.serverTimestamp(),
+        });
+      return 'ok';
+    } catch (e) {
+      console.error('Erro ao atribuir tarefa:', e);
+      return 'Erro ao atribuir tarefa ao dependente';
+    }
+  }
+
   return (
-    <UserContext.Provider value={{update, del, getUser, responsaveis, dependentes}}>
+    <UserContext.Provider
+      value={{update, del, getUser, responsaveis, dependentes, atribuirTarefaAoDependente}}>
       {children}
     </UserContext.Provider>
   );

@@ -1,11 +1,10 @@
 import {CommonActions} from '@react-navigation/native';
-import React, {useContext, useEffect, useState} from 'react';
+import React, {useCallback, useContext, useEffect, useState} from 'react';
 import {Image, StyleSheet, View} from 'react-native';
 import {Dialog, Text, useTheme} from 'react-native-paper';
 import auth from '@react-native-firebase/auth';
 import {AuthContext} from '../context/AuthProvider';
 import {UserContext} from '../context/UserProvider';
-// import {Usuario} from '../model/Usuario';
 
 export default function Preload({navigation}: any) {
   const theme = useTheme();
@@ -14,25 +13,17 @@ export default function Preload({navigation}: any) {
   const [dialogVisivel, setDialogVisivel] = useState(false);
   const [mensagemErro] = useState('Você precisa verificar seu email para continuar');
 
-  useEffect(() => {
-    // Liga o listener e fica escutando o estado da autenticação no serviço Auth do Firebase
-    const unsubscribe = auth().onAuthStateChanged(async authUser => {
-      if (authUser) {
-        if (authUser.emailVerified) {
-          await buscaUsuario();
-        } else {
-          setDialogVisivel(true);
-        }
-      } else {
-        await logar();
-      }
-    });
+  const irParaSignIn = useCallback(() => {
+    setDialogVisivel(false);
+    navigation.dispatch(
+      CommonActions.reset({
+        index: 0,
+        routes: [{name: 'SignIn'}],
+      }),
+    );
+  }, [navigation]);
 
-    // Ao desmontar
-    return () => unsubscribe(); // Desliga o listener
-  }, []);
-
-  async function buscaUsuario() {
+  const buscaUsuario = useCallback(async () => {
     const usuario = await getUser();
     if (usuario) {
       setUserAuth(usuario);
@@ -43,9 +34,9 @@ export default function Preload({navigation}: any) {
         }),
       );
     }
-  }
+  }, [getUser, navigation, setUserAuth]);
 
-  async function logar() {
+  const logar = useCallback(async () => {
     const credencial = await recuperaCredencialdaCache();
 
     if (credencial && credencial !== 'null') {
@@ -64,17 +55,23 @@ export default function Preload({navigation}: any) {
     } else {
       irParaSignIn();
     }
-  }
+  }, [recuperaCredencialdaCache, SignIn, buscaUsuario, irParaSignIn]);
 
-  function irParaSignIn() {
-    setDialogVisivel(false);
-    navigation.dispatch(
-      CommonActions.reset({
-        index: 0,
-        routes: [{name: 'SignIn'}],
-      }),
-    );
-  }
+  useEffect(() => {
+    const unsubscribe = auth().onAuthStateChanged(async authUser => {
+      if (authUser) {
+        if (authUser.emailVerified) {
+          await buscaUsuario();
+        } else {
+          setDialogVisivel(true);
+        }
+      } else {
+        await logar();
+      }
+    });
+
+    return () => unsubscribe();
+  }, [buscaUsuario, logar]);
 
   return (
     <View style={{...styles.container, backgroundColor: theme.colors.background}}>

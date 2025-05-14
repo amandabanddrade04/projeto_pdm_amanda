@@ -4,7 +4,13 @@ import {Dependente} from '../model/Dependente';
 import ImageResizer from '@bam.tech/react-native-image-resizer';
 import storage from '@react-native-firebase/storage';
 
-export const DependenteContext = createContext({});
+type DependenteContextType = {
+  dependentes: Dependente[];
+  salvar: (dependente: Dependente, urlDevice: string) => Promise<string>;
+  excluir: (dependente: Dependente) => Promise<string>;
+};
+
+export const DependenteContext = createContext<DependenteContextType | null>(null);
 
 export const DependenteProvider = ({children}: any) => {
   const [dependentes, setDependentes] = useState<Dependente[]>([]);

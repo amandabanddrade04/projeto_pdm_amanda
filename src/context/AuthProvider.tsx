@@ -10,6 +10,8 @@ export const AuthContext = createContext({});
 export const AuthProvider = ({children}: any) => {
   const [userAuth, setUserAuth] = useState<FirebaseAuthTypes.User | null>(null);
 
+
+
   async function armazenaCredencialnaCache(credencial: Credencial): Promise<void> {
     try {
       await EncryptedStorage.setItem(

@@ -46,7 +46,7 @@ export default function PerfilTela({navigation}: any) {
   const [dialogErroVisivel, setDialogErroVisivel] = useState(false);
   const [dialogExcluirVisivel, setDialogExcluirVisivel] = useState(false);
   const [mensagem, setMensagem] = useState({tipo: '', mensagem: ''});
-  const {update, del} = useContext<any>(UserContext);
+  const {del} = useContext<any>(UserContext);
   const [urlDevice, setUrlDevice] = useState<string | undefined>('');
   const [excluindo, setExcluindo] = useState(false);
   const [atualizando, setAtualizando] = useState(false);
