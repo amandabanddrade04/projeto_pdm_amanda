@@ -1,4 +1,4 @@
-import React, {useState, useEffect} from 'react';
+import React, {useState, useEffect, useContext} from 'react';
 import {Controller, useForm} from 'react-hook-form';
 import {Image, StyleSheet, View, FlatList} from 'react-native';
 import {Button, Dialog, Text, TextInput, useTheme} from 'react-native-paper';
@@ -8,6 +8,30 @@ import {ImageLibraryOptions, launchCamera, launchImageLibrary} from 'react-nativ
 import auth from '@react-native-firebase/auth';
 import firestore from '@react-native-firebase/firestore';
 import storage from '@react-native-firebase/storage';
+import {useNavigation, useRoute, RouteProp} from '@react-navigation/native';
+import {StackNavigationProp} from '@react-navigation/stack';
+import {DependenteContext} from '../context/DependenteProvider';
+
+// Tipagem das rotas do Stack
+type RootStackParamList = {
+  DependenteTela: {dependente?: Dependente};
+  SelecionarTarefaTela: {dependenteId: string};
+};
+
+type Dependente = {
+  uid?: string;
+  nome: string;
+  email: string;
+  senha: string;
+  urlFoto?: string;
+};
+
+// Tipagem para o formulário
+type FormData = {
+  nome: string;
+  email: string;
+  senha: string;
+};
 
 const requiredMessage = 'Campo obrigatório';
 
@@ -17,20 +41,21 @@ const schema = yup.object().shape({
   senha: yup.string().required(requiredMessage).min(6, 'A senha deve ter ao menos 6 caracteres'),
 });
 
-export default function DependenteTela({navigation}: any) {
-  const dependente = navigation.route?.params?.dependente;
+export default function DependenteTela() {
+  const navigation = useNavigation<StackNavigationProp<RootStackParamList, 'DependenteTela'>>();
+  const route = useRoute<RouteProp<RootStackParamList, 'DependenteTela'>>();
+  const {dependente} = useContext<any>(DependenteContext);
   const [tarefas, setTarefas] = useState<any[]>([]);
   const [urlDevice, setUrlDevice] = useState<string | null>(null);
   const [requisitando, setRequisitando] = useState(false);
   const [mensagem, setMensagem] = useState({tipo: '', mensagem: ''});
   const [dialogErroVisivel, setDialogErroVisivel] = useState(false);
   const theme = useTheme();
-
   const {
     control,
     handleSubmit,
     formState: {errors},
-  } = useForm<any>({
+  } = useForm<FormData>({
     defaultValues: {
       nome: dependente?.nome || '',
       email: dependente?.email || '',
@@ -41,7 +66,7 @@ export default function DependenteTela({navigation}: any) {
 
   useEffect(() => {
     if (dependente?.uid) {
-      firestore()
+      const unsubscribe = firestore()
         .collection('tarefas')
         .where('dependenteId', '==', dependente.uid)
         .onSnapshot(snapshot => {
@@ -51,6 +76,7 @@ export default function DependenteTela({navigation}: any) {
           }));
           setTarefas(tarefasData);
         });
+      return unsubscribe; // para limpar o listener
     }
   }, [dependente]);
 
@@ -103,7 +129,7 @@ export default function DependenteTela({navigation}: any) {
     return await storageRef.getDownloadURL();
   };
 
-  const atualizarDependente = async (data: any) => {
+  const atualizarDependente = async (data: FormData) => {
     setRequisitando(true);
     try {
       if (!dependente?.uid) throw new Error('ID do dependente não encontrado');
@@ -123,7 +149,7 @@ export default function DependenteTela({navigation}: any) {
     }
   };
 
-  const cadastrarDependente = async (data: any) => {
+  const cadastrarDependente = async (data: FormData) => {
     setRequisitando(true);
     try {
       const responsavelId = auth().currentUser?.uid;
@@ -157,7 +183,9 @@ export default function DependenteTela({navigation}: any) {
             <Image
               style={styles.image}
               source={
-                dependente?.urlFoto
+                urlDevice
+                  ? {uri: urlDevice}
+                  : dependente?.urlFoto
                   ? {uri: dependente.urlFoto}
                   : require('../assets/images/person.png')
               }
@@ -206,8 +234,7 @@ export default function DependenteTela({navigation}: any) {
                 />
               )}
             />
-            {errors.nome?.message && <Text style={styles.textError}>{errors.nome.message}</Text>}
-
+            {errors.email?.message && <Text style={styles.textError}>{errors.email.message}</Text>}
 
             <Controller
               control={control}
@@ -224,8 +251,7 @@ export default function DependenteTela({navigation}: any) {
                 />
               )}
             />
-            {errors.nome?.message && <Text style={styles.textError}>{errors.nome.message}</Text>}
-
+            {errors.senha?.message && <Text style={styles.textError}>{errors.senha.message}</Text>}
 
             {/* Botões de ação */}
             {dependente ? (
@@ -248,21 +274,30 @@ export default function DependenteTela({navigation}: any) {
 
             {/* Botão Adicionar Tarefa */}
             {dependente?.uid && (
-              <Button mode="contained" style={styles.button} onPress={adicionarTarefa}>
+              <Button
+                mode="contained"
+                style={styles.button}
+                onPress={() =>
+                  navigation.navigate('SelecionarTarefaTela', {
+                    dependenteId: dependente.uid,
+                  })
+                }>
                 Adicionar Tarefa
               </Button>
             )}
 
             {/* Lista de Tarefas */}
-            <FlatList
-              data={tarefas}
-              keyExtractor={item => item.id}
-              renderItem={({item}) => (
-                <View style={styles.tarefaContainer}>
-                  <Text>{item.descricao}</Text>
-                </View>
-              )}
-            />
+            {dependente?.uid && tarefas.length > 0 && (
+              <FlatList
+                data={tarefas}
+                keyExtractor={item => item.id}
+                renderItem={({item}) => (
+                  <View style={styles.tarefaContainer}>
+                    <Text>{item.descricao}</Text>
+                  </View>
+                )}
+              />
+            )}
           </View>
         )}
       />

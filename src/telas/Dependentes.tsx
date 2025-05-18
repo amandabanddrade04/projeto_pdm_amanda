@@ -6,18 +6,17 @@ import {DependenteContext} from '../context/DependenteProvider';
 
 export default function Dependentes({navigation}: any) {
   const theme = useTheme();
-  const {dependentes} = useContext<any>(DependenteContext);
+  const {dependentes, setDependente} = useContext<any>(DependenteContext);
 
   const irParaTelaDependente = (dependente: Dependente | null) => {
-    navigation.navigate('DependenteTela', {
-      dependente,
-    });
+    setDependente(dependente);
+    navigation.navigate('DependenteStack');
   };
 
   return (
     <View style={{...styles.container, backgroundColor: theme.colors.background}}>
       <List.Section style={{...styles.list, backgroundColor: theme.colors.background}}>
-        <List.Subheader style={styles.subhearder}>Lista de Dependentes</List.Subheader>
+        <List.Subheader style={styles.subhearder}>Meus Dependentes</List.Subheader>
         <ScrollView>
           {dependentes.map((dependente: Dependente, key: number) => (
             <Card

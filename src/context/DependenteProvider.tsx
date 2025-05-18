@@ -4,16 +4,11 @@ import {Dependente} from '../model/Dependente';
 import ImageResizer from '@bam.tech/react-native-image-resizer';
 import storage from '@react-native-firebase/storage';
 
-type DependenteContextType = {
-  dependentes: Dependente[];
-  salvar: (dependente: Dependente, urlDevice: string) => Promise<string>;
-  excluir: (dependente: Dependente) => Promise<string>;
-};
-
-export const DependenteContext = createContext<DependenteContextType | null>(null);
+export const DependenteContext = createContext<any>({});
 
 export const DependenteProvider = ({children}: any) => {
   const [dependentes, setDependentes] = useState<Dependente[]>([]);
+  const [dependente, setDependente] = useState<Dependente | null>(null);
 
   useEffect(() => {
     const listener = firestore()
@@ -109,7 +104,7 @@ export const DependenteProvider = ({children}: any) => {
   }
 
   return (
-    <DependenteContext.Provider value={{dependentes, salvar, excluir}}>
+    <DependenteContext.Provider value={{dependentes, salvar, excluir, setDependente, dependente}}>
       {children}
     </DependenteContext.Provider>
   );

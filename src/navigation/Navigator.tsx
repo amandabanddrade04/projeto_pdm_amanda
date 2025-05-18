@@ -1,4 +1,3 @@
-/* eslint-disable react/no-unstable-nested-components */
 import {NavigationContainer} from '@react-navigation/native';
 import {createNativeStackNavigator} from '@react-navigation/native-stack';
 import React from 'react';
@@ -15,25 +14,56 @@ import AlteraSenha from '../telas/AlteraSenha';
 import TarefaTela from '../telas/TarefaTela';
 import Dependentes from '../telas/Dependentes';
 import DependenteTela from '../telas/DependenteTela';
+import SelecionarTarefaTela from '../telas/SelecionarTarefaTela';
+import DependentesTarefas from '../telas/DependentesTarefas';
 
 const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
 
-// Navegação de autenticação
 const AuthStack = () => (
-  <Stack.Navigator
-    initialRouteName="Preload"
-    screenOptions={{
-      headerShown: false,
-    }}>
+  <Stack.Navigator initialRouteName="Preload" screenOptions={{headerShown: false}}>
     <Stack.Screen name="Preload" component={Preload} />
     <Stack.Screen name="SignIn" component={SignIn} />
     <Stack.Screen name="SignUp" component={SignUp} />
     <Stack.Screen name="EsqueceuSenha" component={EsqueceuSenha} />
+    <Stack.Screen name="SelecionarTarefaTela" component={SelecionarTarefaTela} />
   </Stack.Navigator>
 );
 
-// Navegação do aplicativo principal com abas
+const DependenteStack = () => {
+  const theme = useTheme();
+  return (
+    <Tab.Navigator
+      initialRouteName="DependentesTarefas"
+      screenOptions={{
+        tabBarActiveTintColor: theme.colors.primary,
+        tabBarInactiveTintColor: 'gray',
+        headerShown: false,
+        tabBarStyle: {backgroundColor: theme.colors.surface},
+      }}>
+      <Tab.Screen
+        component={DependentesTarefas}
+        name="DependentesTarefas"
+        options={{
+          tabBarLabel: 'Tarefas',
+          tabBarIcon: () => (
+            <Icon source="account-tie-hat" color={theme.colors.primary} size={20} />
+          ),
+        }}
+      />
+
+      <Tab.Screen
+        component={DependenteTela}
+        name="DependenteTela"
+        options={{
+          tabBarLabel: 'Perfil',
+          tabBarIcon: () => <Icon source="menu" color={theme.colors.primary} size={20} />,
+        }}
+      />
+    </Tab.Navigator>
+  );
+};
+
 const AppStack = () => {
   const theme = useTheme();
   return (
@@ -55,7 +85,6 @@ const AppStack = () => {
           ),
         }}
       />
-
       <Tab.Screen
         component={TarefaTela}
         name="Tarefas"
@@ -66,7 +95,6 @@ const AppStack = () => {
           ),
         }}
       />
-
       <Tab.Screen
         component={Menu}
         name="Menu"
@@ -79,37 +107,23 @@ const AppStack = () => {
   );
 };
 
-// Navegação principal
 export default function Navigator() {
   const theme = useTheme();
-
   return (
     <NavigationContainer>
       <StatusBar backgroundColor={theme.dark ? theme.colors.surface : theme.colors.primary} />
-      <Stack.Navigator
-        initialRouteName="AuthStack"
-        screenOptions={{
-          headerShown: false,
-        }}>
+      <Stack.Navigator initialRouteName="AuthStack" screenOptions={{headerShown: false}}>
         <Stack.Screen name="AuthStack" component={AuthStack} />
         <Stack.Screen name="AppStack" component={AppStack} />
+        <Stack.Screen name="TarefaTela" component={TarefaTela} options={{presentation: 'modal'}} />
         <Stack.Screen
-          component={TarefaTela}
-          name="TarefaTela"
-          options={{
-            presentation: 'modal',
-          }}
+          name="DependenteStack"
+          component={DependenteStack}
+          options={{presentation: 'modal'}}
         />
-
-        <Stack.Screen
-          component={DependenteTela}
-          name="DependenteTela"
-          options={{
-            presentation: 'modal',
-          }}
-        />
-        <Stack.Screen component={Perfil} name="Perfil" />
-        <Stack.Screen component={AlteraSenha} name="AlteraSenha" />
+        <Stack.Screen name="Perfil" component={Perfil} />
+        <Stack.Screen name="AlteraSenha" component={AlteraSenha} />
+        <Stack.Screen name="SelecionarTarefaTela" component={SelecionarTarefaTela} />
       </Stack.Navigator>
     </NavigationContainer>
   );
