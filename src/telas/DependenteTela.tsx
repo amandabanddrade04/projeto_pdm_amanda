@@ -1,4 +1,4 @@
-import React, {useState, useEffect, useContext} from 'react';
+import React, {useState, useContext} from 'react';
 import {Controller, useForm} from 'react-hook-form';
 import {Image, StyleSheet, View, FlatList} from 'react-native';
 import {Button, Dialog, Text, TextInput, useTheme} from 'react-native-paper';
@@ -8,11 +8,10 @@ import {ImageLibraryOptions, launchCamera, launchImageLibrary} from 'react-nativ
 import auth from '@react-native-firebase/auth';
 import firestore from '@react-native-firebase/firestore';
 import storage from '@react-native-firebase/storage';
-import {useNavigation, useRoute, RouteProp} from '@react-navigation/native';
-import {StackNavigationProp} from '@react-navigation/stack';
+import {useNavigation} from '@react-navigation/native';
 import {DependenteContext} from '../context/DependenteProvider';
+import {NativeStackNavigationProp} from '@react-navigation/native-stack';
 
-// Tipagem das rotas do Stack
 type RootStackParamList = {
   DependenteTela: {dependente?: Dependente};
   SelecionarTarefaTela: {dependenteId: string};
@@ -26,31 +25,31 @@ type Dependente = {
   urlFoto?: string;
 };
 
-// Tipagem para o formulário
 type FormData = {
   nome: string;
   email: string;
   senha: string;
 };
 
-const requiredMessage = 'Campo obrigatório';
-
 const schema = yup.object().shape({
-  nome: yup.string().required(requiredMessage).min(3, 'O nome deve ter ao menos 3 caracteres'),
-  email: yup.string().required(requiredMessage).email('Email inválido'),
-  senha: yup.string().required(requiredMessage).min(6, 'A senha deve ter ao menos 6 caracteres'),
+  nome: yup.string().required('Campo obrigatório').min(3, 'O nome deve ter ao menos 3 caracteres'),
+  email: yup.string().required('Campo obrigatório').email('Email inválido'),
+  senha: yup
+    .string()
+    .required('Campo obrigatório')
+    .min(6, 'A senha deve ter ao menos 6 caracteres'),
 });
 
 export default function DependenteTela() {
-  const navigation = useNavigation<StackNavigationProp<RootStackParamList, 'DependenteTela'>>();
-  const route = useRoute<RouteProp<RootStackParamList, 'DependenteTela'>>();
+  const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const {dependente} = useContext<any>(DependenteContext);
-  const [tarefas, setTarefas] = useState<any[]>([]);
   const [urlDevice, setUrlDevice] = useState<string | null>(null);
-  const [requisitando, setRequisitando] = useState(false);
+  const [loading, setLoading] = useState(false);
   const [mensagem, setMensagem] = useState({tipo: '', mensagem: ''});
-  const [dialogErroVisivel, setDialogErroVisivel] = useState(false);
+  const [dialogVisivel, setDialogVisivel] = useState(false);
+  const [confirmarExclusaoVisivel, setConfirmarExclusaoVisivel] = useState(false);
   const theme = useTheme();
+
   const {
     control,
     handleSubmit,
@@ -63,42 +62,6 @@ export default function DependenteTela() {
     },
     resolver: yupResolver(schema),
   });
-
-  useEffect(() => {
-    if (dependente?.uid) {
-      const unsubscribe = firestore()
-        .collection('tarefas')
-        .where('dependenteId', '==', dependente.uid)
-        .onSnapshot(snapshot => {
-          const tarefasData = snapshot.docs.map(doc => ({
-            id: doc.id,
-            ...doc.data(),
-          }));
-          setTarefas(tarefasData);
-        });
-      return unsubscribe; // para limpar o listener
-    }
-  }, [dependente]);
-
-  const adicionarTarefa = () => {
-    if (!dependente?.uid) return;
-
-    firestore()
-      .collection('tarefas')
-      .add({
-        dependenteId: dependente.uid,
-        descricao: 'Nova tarefa',
-        status: 'pendente',
-        dataCriacao: firestore.FieldValue.serverTimestamp(),
-      })
-      .then(() => {
-        setMensagem({tipo: 'ok', mensagem: 'Tarefa adicionada com sucesso!'});
-      })
-      .catch(() => {
-        setMensagem({tipo: 'erro', mensagem: 'Erro ao adicionar tarefa'});
-      })
-      .finally(() => setDialogErroVisivel(true));
-  };
 
   const buscaNaGaleria = () => {
     const options: ImageLibraryOptions = {mediaType: 'photo'};
@@ -119,57 +82,76 @@ export default function DependenteTela() {
       return (
         dependente?.urlFoto || 'https://www.gravatar.com/avatar/00000000000000000000000000000000'
       );
-
     const response = await fetch(urlDevice);
     const blob = await response.blob();
     const filename = `dependentes/${auth().currentUser?.uid}_${Date.now()}.jpg`;
-    const storageRef = storage().ref(filename);
-
-    await storageRef.put(blob);
-    return await storageRef.getDownloadURL();
-  };
-
-  const atualizarDependente = async (data: FormData) => {
-    setRequisitando(true);
-    try {
-      if (!dependente?.uid) throw new Error('ID do dependente não encontrado');
-      const urlFoto = await uploadFoto();
-      await firestore().collection('dependentes').doc(dependente.uid).update({
-        nome: data.nome,
-        email: data.email,
-        senha: data.senha,
-        urlFoto,
-      });
-      setMensagem({tipo: 'ok', mensagem: 'Dependente atualizado com sucesso!'});
-    } catch (error: any) {
-      setMensagem({tipo: 'erro', mensagem: error.message});
-    } finally {
-      setDialogErroVisivel(true);
-      setRequisitando(false);
-    }
+    await storage().ref(filename).put(blob);
+    return await storage().ref(filename).getDownloadURL();
   };
 
   const cadastrarDependente = async (data: FormData) => {
-    setRequisitando(true);
+    setLoading(true);
     try {
       const responsavelId = auth().currentUser?.uid;
       if (!responsavelId) throw new Error('Usuário não autenticado');
-
       const urlFoto = await uploadFoto();
-      await firestore().collection('dependentes').add({
-        nome: data.nome,
-        email: data.email,
-        senha: data.senha,
-        urlFoto,
-        responsavelId,
-      });
-
+      await firestore()
+        .collection('dependentes')
+        .add({
+          ...data,
+          urlFoto,
+          responsavelId,
+        });
       setMensagem({tipo: 'ok', mensagem: 'Dependente cadastrado com sucesso!'});
-    } catch (error: any) {
-      setMensagem({tipo: 'erro', mensagem: error.message});
+    } catch (err: any) {
+      setMensagem({tipo: 'erro', mensagem: err.message});
     } finally {
-      setDialogErroVisivel(true);
-      setRequisitando(false);
+      setLoading(false);
+      setDialogVisivel(true);
+    }
+  };
+
+  const atualizarDependente = async (data: FormData) => {
+    setLoading(true);
+    try {
+      if (!dependente?.uid) throw new Error('ID do dependente não encontrado');
+      const urlFoto = await uploadFoto();
+      await firestore()
+        .collection('dependentes')
+        .doc(dependente.uid)
+        .update({
+          ...data,
+          urlFoto,
+        });
+      setMensagem({tipo: 'ok', mensagem: 'Dependente atualizado com sucesso!'});
+    } catch (err: any) {
+      setMensagem({tipo: 'erro', mensagem: err.message});
+    } finally {
+      setLoading(false);
+      setDialogVisivel(true);
+    }
+  };
+
+  const deletarDependente = async () => {
+    try {
+      if (!dependente?.uid) throw new Error('ID do dependente não encontrado');
+
+      await firestore().collection('dependentes').doc(dependente.uid).delete();
+
+      // Se quiser também apagar do Storage (foto), você pode:
+      // if (dependente.urlFoto) {
+      //   const ref = storage().refFromURL(dependente.urlFoto);
+      //   await ref.delete();
+      // }
+
+      setMensagem({tipo: 'ok', mensagem: 'Dependente excluído com sucesso!'});
+      setDialogVisivel(true);
+
+      // Após curto tempo, voltar para tela anterior
+      setTimeout(() => navigation.goBack(), 2000);
+    } catch (err: any) {
+      setMensagem({tipo: 'erro', mensagem: err.message});
+      setDialogVisivel(true);
     }
   };
 
@@ -177,11 +159,9 @@ export default function DependenteTela() {
     <View style={{...styles.container, backgroundColor: theme.colors.background}}>
       <FlatList
         data={[{key: 'form'}]}
-        keyExtractor={(item, index) => item.key + index}
         renderItem={() => (
           <View>
             <Image
-              style={styles.image}
               source={
                 urlDevice
                   ? {uri: urlDevice}
@@ -189,32 +169,32 @@ export default function DependenteTela() {
                   ? {uri: dependente.urlFoto}
                   : require('../assets/images/person.png')
               }
+              style={styles.image}
             />
             <View style={styles.divButtonsImage}>
               <Button
-                style={styles.buttonImage}
                 mode="outlined"
                 icon="image"
+                style={styles.buttonImage}
                 onPress={buscaNaGaleria}>
                 Galeria
               </Button>
-              <Button style={styles.buttonImage} mode="outlined" icon="camera" onPress={tiraFoto}>
+              <Button mode="outlined" icon="camera" style={styles.buttonImage} onPress={tiraFoto}>
                 Foto
               </Button>
             </View>
 
-            {/* Campos de formulário */}
             <Controller
               control={control}
               name="nome"
               render={({field: {onChange, onBlur, value}}) => (
                 <TextInput
-                  style={styles.textinput}
                   label="Nome"
                   mode="outlined"
+                  value={value}
                   onBlur={onBlur}
                   onChangeText={onChange}
-                  value={value}
+                  style={styles.textinput}
                 />
               )}
             />
@@ -225,12 +205,12 @@ export default function DependenteTela() {
               name="email"
               render={({field: {onChange, onBlur, value}}) => (
                 <TextInput
-                  style={styles.textinput}
                   label="Email"
                   mode="outlined"
+                  value={value}
                   onBlur={onBlur}
                   onChangeText={onChange}
-                  value={value}
+                  style={styles.textinput}
                 />
               )}
             />
@@ -241,74 +221,64 @@ export default function DependenteTela() {
               name="senha"
               render={({field: {onChange, onBlur, value}}) => (
                 <TextInput
-                  style={styles.textinput}
                   label="Senha"
                   mode="outlined"
                   secureTextEntry
+                  value={value}
                   onBlur={onBlur}
                   onChangeText={onChange}
-                  value={value}
+                  style={styles.textinput}
                 />
               )}
             />
             {errors.senha?.message && <Text style={styles.textError}>{errors.senha.message}</Text>}
 
-            {/* Botões de ação */}
-            {dependente ? (
-              <Button
-                mode="contained"
-                style={styles.button}
-                onPress={handleSubmit(atualizarDependente)}
-                loading={requisitando}>
-                Atualizar Dependente
-              </Button>
-            ) : (
-              <Button
-                mode="contained"
-                style={styles.button}
-                onPress={handleSubmit(cadastrarDependente)}
-                loading={requisitando}>
-                Cadastrar Dependente
-              </Button>
-            )}
+            <Button
+              mode="contained"
+              style={styles.button}
+              loading={loading}
+              onPress={handleSubmit(dependente ? atualizarDependente : cadastrarDependente)}>
+              {dependente ? 'Atualizar Dependente' : 'Cadastrar Dependente'}
+            </Button>
 
-            {/* Botão Adicionar Tarefa */}
             {dependente?.uid && (
               <Button
-                mode="contained"
-                style={styles.button}
-                onPress={() =>
-                  navigation.navigate('SelecionarTarefaTela', {
-                    dependenteId: dependente.uid,
-                  })
-                }>
-                Adicionar Tarefa
+                mode="outlined"
+                style={[styles.button, {borderColor: 'red'}]}
+                textColor="red"
+                onPress={() => setConfirmarExclusaoVisivel(true)}>
+                Excluir Dependente
               </Button>
-            )}
-
-            {/* Lista de Tarefas */}
-            {dependente?.uid && tarefas.length > 0 && (
-              <FlatList
-                data={tarefas}
-                keyExtractor={item => item.id}
-                renderItem={({item}) => (
-                  <View style={styles.tarefaContainer}>
-                    <Text>{item.descricao}</Text>
-                  </View>
-                )}
-              />
             )}
           </View>
         )}
       />
 
-      {/* Dialog de mensagens */}
-      <Dialog visible={dialogErroVisivel} onDismiss={() => setDialogErroVisivel(false)}>
+      <Dialog visible={dialogVisivel} onDismiss={() => setDialogVisivel(false)}>
         <Dialog.Icon icon={mensagem.tipo === 'ok' ? 'check-circle' : 'alert-circle'} size={60} />
         <Dialog.Title>{mensagem.tipo === 'ok' ? 'Sucesso' : 'Erro'}</Dialog.Title>
         <Dialog.Content>
           <Text>{mensagem.mensagem}</Text>
         </Dialog.Content>
+      </Dialog>
+
+      <Dialog
+        visible={confirmarExclusaoVisivel}
+        onDismiss={() => setConfirmarExclusaoVisivel(false)}>
+        <Dialog.Title>Confirmar Exclusão</Dialog.Title>
+        <Dialog.Content>
+          <Text>Tem certeza que deseja excluir este dependente?</Text>
+        </Dialog.Content>
+        <Dialog.Actions>
+          <Button onPress={() => setConfirmarExclusaoVisivel(false)}>Cancelar</Button>
+          <Button
+            onPress={() => {
+              setConfirmarExclusaoVisivel(false);
+              deletarDependente(); // Chama a função de exclusão aqui
+            }}>
+            Confirmar
+          </Button>
+        </Dialog.Actions>
       </Dialog>
     </View>
   );
@@ -355,5 +325,26 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     marginTop: 10,
     marginBottom: 10,
+  },
+
+  tarefaCard: {
+    backgroundColor: '#f2f2f2',
+    borderRadius: 12,
+    padding: 15,
+    marginBottom: 10,
+  },
+  tarefaTitulo: {
+    fontSize: 16,
+    fontWeight: 'bold',
+  },
+  tarefaCategoria: {
+    fontSize: 14,
+    color: '#555',
+    marginTop: 4,
+  },
+  tarefaPontos: {
+    fontSize: 14,
+    color: '#00796B',
+    marginTop: 2,
   },
 });
