@@ -344,7 +344,7 @@ const styles = StyleSheet.create({
   },
   tarefaPontos: {
     fontSize: 14,
-    color: '#00796B',
+    color: '#000000',
     marginTop: 2,
   },
 });

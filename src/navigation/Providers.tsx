@@ -1,18 +1,35 @@
 import React from 'react';
-import {MD3DarkTheme, MD3LightTheme, PaperProvider} from 'react-native-paper';
 import Navigator from './Navigator';
 import {AuthProvider} from '../context/AuthProvider';
 import {UserProvider} from '../context/UserProvider';
 import {DependenteProvider} from '../context/DependenteProvider';
+import {MD3LightTheme as DefaultTheme, MD3DarkTheme, PaperProvider} from 'react-native-paper';
 
-const themeLight = {
-  ...MD3LightTheme,
+export const meuTemaClaro = {
+  ...DefaultTheme,
+  colors: {
+    ...DefaultTheme.colors,
+    primary: '#000000', // cor principal
+    secondary: '#000000', // cor secundária
+    background: '#ffffff',
+    surface: '#ffffff',
+    text: '#000000',
+    onPrimary: '#FFFFFF',
+  },
 };
 
-const themeDark = {
+export const meuTemaEscuro = {
   ...MD3DarkTheme,
+  colors: {
+    ...MD3DarkTheme.colors,
+    primary: '#81C784',
+    secondary: '#FFD54F',
+    background: '#303030',
+    surface: '#424242',
+    text: '#FFFFFF',
+    onPrimary: '#000000',
+  },
 };
-
 const temaDoApp = true;
 
 export default function Providers() {
@@ -20,7 +37,7 @@ export default function Providers() {
     <AuthProvider>
       <UserProvider>
         <DependenteProvider>
-          <PaperProvider theme={temaDoApp ? themeLight : themeDark}>
+          <PaperProvider theme={temaDoApp ? meuTemaClaro : meuTemaEscuro}>
             <Navigator />
           </PaperProvider>
         </DependenteProvider>

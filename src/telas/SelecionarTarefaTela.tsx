@@ -2,27 +2,41 @@ import React, {useEffect, useState} from 'react';
 import {View, ScrollView} from 'react-native';
 import {Text, Button, Checkbox} from 'react-native-paper';
 import firestore from '@react-native-firebase/firestore';
-import {useNavigation, useRoute} from '@react-navigation/native';
+import {useNavigation, useRoute, RouteProp} from '@react-navigation/native';
+
+// Define os tipos da sua pilha de navegação
+type RootStackParamList = {
+  SelecionarTarefa: {
+    dependenteId: string;
+  };
+};
+
+type Tarefa = {
+  id: string;
+  nome: string;
+  descricao: string;
+  categoriaId: string;
+};
 
 export default function SelecionarTarefaTela() {
   const navigation = useNavigation();
-  const route = useRoute();
-  const dependenteId = route.params?.dependenteId;
+  const route = useRoute<RouteProp<RootStackParamList, 'SelecionarTarefa'>>();
+  const dependenteId = route.params.dependenteId;
 
-  const [tarefasPorCategoria, setTarefasPorCategoria] = useState({});
-  const [selecionadas, setSelecionadas] = useState([]);
+  const [tarefasPorCategoria, setTarefasPorCategoria] = useState<Record<string, Tarefa[]>>({});
+  const [selecionadas, setSelecionadas] = useState<Tarefa[]>([]);
 
   useEffect(() => {
     const carregarTarefas = async () => {
       const categoriasSnap = await firestore().collection('categorias').get();
       const tarefasSnap = await firestore().collection('tarefas').get();
 
-      const categorias = {};
+      const categorias: Record<string, string> = {};
       categoriasSnap.forEach(doc => {
         categorias[doc.id] = doc.data().nome;
       });
 
-      const agrupadas = {};
+      const agrupadas: Record<string, Tarefa[]> = {};
       tarefasSnap.forEach(doc => {
         const dados = doc.data();
         const categoria = categorias[dados.categoriaId] || 'Outros';
@@ -43,7 +57,7 @@ export default function SelecionarTarefaTela() {
     carregarTarefas();
   }, []);
 
-  const toggleSelecionada = tarefa => {
+  const toggleSelecionada = (tarefa: Tarefa) => {
     setSelecionadas(prev => {
       const jaTem = prev.find(t => t.id === tarefa.id);
       if (jaTem) {

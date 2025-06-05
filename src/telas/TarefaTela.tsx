@@ -110,7 +110,7 @@ const styles = StyleSheet.create({
     padding: 10,
   },
   selecionado: {
-    color: 'green',
+    color: 'red',
     marginLeft: 15,
   },
 });

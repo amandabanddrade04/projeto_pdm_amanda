@@ -71,7 +71,7 @@ const styles = StyleSheet.create({
     width: '100%',
   },
   tarefaCard: {
-    backgroundColor: '#f2f2f2',
+    backgroundColor: '#ffffff',
     borderRadius: 12,
     padding: 15,
     marginBottom: 10,
@@ -87,7 +87,7 @@ const styles = StyleSheet.create({
   },
   tarefaPontos: {
     fontSize: 14,
-    color: '#00796B',
+    color: '#790000',
     marginTop: 2,
   },
   emptyText: {
