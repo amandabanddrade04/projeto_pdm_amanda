@@ -1,8 +1,11 @@
+import React, {createContext, useEffect, useState, useContext} from 'react';
 import firestore from '@react-native-firebase/firestore';
-import React, {createContext, useEffect, useState} from 'react';
-import {Dependente} from '../model/Dependente';
-import ImageResizer from '@bam.tech/react-native-image-resizer';
 import storage from '@react-native-firebase/storage';
+import ImageResizer from '@bam.tech/react-native-image-resizer';
+import {Dependente} from '../model/Dependente';
+import {AuthContext} from './AuthProvider';
+import {UserContext} from './UserProvider';
+import {Perfil} from '../model/Perfil';
 
 export const DependenteContext = createContext<any>({});
 
@@ -10,34 +13,69 @@ export const DependenteProvider = ({children}: any) => {
   const [dependentes, setDependentes] = useState<Dependente[]>([]);
   const [dependente, setDependente] = useState<Dependente | null>(null);
 
+  const {userAuth} = useContext(AuthContext);
+  const {getUser} = useContext(UserContext);
+
   useEffect(() => {
-    const listener = firestore()
-      .collection('dependentes')
-      .orderBy('nome')
-      .onSnapshot(snapShot => {
-        //console.log(snapShot);
-        //console.log(snapShot._docs);
-        if (snapShot) {
-          let data: Dependente[] = [];
-          snapShot.forEach(doc => {
-            data.push({
-              uid: doc.id,
-              nome: doc.data().nome,
-              email: doc.data().email,
-              urlFoto: doc.data().urlFoto,
-              perfil: doc.data().perfil,
-              responsavel: doc.data().responsavel,
+    if (!userAuth) {
+      setDependentes([]);
+      return;
+    }
+
+    let unsubscribe: () => void;
+
+    const setupListener = async () => {
+      const usuarioLogado = await getUser();
+
+      if (!usuarioLogado || !usuarioLogado.perfil) {
+        return;
+      }
+
+      const query = firestore().collection('dependentes');
+
+      if (usuarioLogado.perfil === Perfil.Responsavel) {
+        unsubscribe = query.where('responsavelId', '==', userAuth.uid).onSnapshot(snapShot => {
+          if (snapShot) {
+            let data: Dependente[] = [];
+            snapShot.forEach(doc => {
+              data.push({
+                uid: doc.id,
+                nome: doc.data().nome,
+                email: doc.data().email,
+                urlFoto: doc.data().urlFoto,
+                responsavelId: doc.data().responsavelId,
+              });
             });
-          });
-          console.log(data);
-          setDependentes(data);
-        }
-      });
+            setDependentes(data);
+          }
+        });
+      } else if (usuarioLogado.perfil === Perfil.Dependente) {
+        unsubscribe = query.doc(userAuth.uid).onSnapshot(doc => {
+          if (doc.exists) {
+            const docData = doc.data();
+            const data: Dependente = {
+              uid: doc.id,
+              nome: docData?.nome,
+              email: docData?.email,
+              urlFoto: docData?.urlFoto,
+              responsavelId: docData?.responsavelId,
+            };
+            setDependentes([data]);
+          } else {
+            setDependentes([]);
+          }
+        });
+      }
+    };
+
+    setupListener();
 
     return () => {
-      listener();
+      if (unsubscribe) {
+        unsubscribe();
+      }
     };
-  }, []);
+  }, [userAuth, getUser]);
 
   const salvar = async (dependente: Dependente, urlDevice: string): Promise<string> => {
     try {

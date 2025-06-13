@@ -2,7 +2,7 @@ import firestore from '@react-native-firebase/firestore';
 import React, {createContext, useEffect, useState} from 'react';
 import {Tarefa} from '../model/Tarefa';
 
-export const TarefaContext = createContext({});
+export const TarefaContext = createContext<any>({});
 
 export const TarefaProvider = ({children}: any) => {
   const [tarefas, setTarefas] = useState<Tarefa[]>([]);
@@ -12,15 +12,15 @@ export const TarefaProvider = ({children}: any) => {
       .collection('tarefas')
       .orderBy('nome')
       .onSnapshot(snapShot => {
-        //console.log(snapShot);
-        //console.log(snapShot._docs);
         if (snapShot) {
           let data: Tarefa[] = [];
           snapShot.forEach(doc => {
             data.push({
+              id: doc.id,
               uid: doc.id,
               nome: doc.data().nome,
               descricao: doc.data().descricao,
+              categoriaId: doc.data().categoriaId,
             });
           });
           setTarefas(data);
@@ -58,7 +58,25 @@ export const TarefaProvider = ({children}: any) => {
     }
   };
 
+  // Função para atualizar o status de uma tarefa atribuída
+  const atualizarStatusTarefa = async (
+    tarefaAtribuidaId: string,
+    novoStatus: 'pendente' | 'concluida',
+  ) => {
+    try {
+      await firestore().collection('tarefas_atribuidas').doc(tarefaAtribuidaId).update({
+        status: novoStatus,
+      });
+      return 'ok';
+    } catch (e) {
+      console.error('TarefaProvider, atualizarStatusTarefa: ', e);
+      return 'Não foi possível atualizar o status da tarefa.';
+    }
+  };
+
   return (
-    <TarefaContext.Provider value={{tarefas, salvar, excluir}}>{children}</TarefaContext.Provider>
+    <TarefaContext.Provider value={{tarefas, salvar, excluir, atualizarStatusTarefa}}>
+      {children}
+    </TarefaContext.Provider>
   );
 };

@@ -1,12 +1,18 @@
 import React, {useContext, useEffect, useState} from 'react';
 import {View, Text, FlatList, StyleSheet} from 'react-native';
-import {Button, useTheme} from 'react-native-paper';
+import {Button, Card, Checkbox, Icon, List, useTheme} from 'react-native-paper';
 import {useNavigation} from '@react-navigation/native';
 import firestore from '@react-native-firebase/firestore';
 import {DependenteContext} from '../context/DependenteProvider';
+import {AuthContext} from '../context/AuthProvider';
+import {TarefaContext} from '../context/TarefaProvider';
+import {Perfil} from '../model/Perfil';
 
 export default function DependentesTarefas() {
   const {dependente} = useContext<any>(DependenteContext);
+  const {userAuth} = useContext<any>(AuthContext);
+  const {atualizarStatusTarefa} = useContext<any>(TarefaContext);
+
   const [tarefas, setTarefas] = useState<any[]>([]);
   const navigation = useNavigation();
   const theme = useTheme();
@@ -24,33 +30,81 @@ export default function DependentesTarefas() {
     }
   }, [dependente]);
 
+  // Função para ser chamada quando o checkbox for pressionado
+  const handleToggleTarefa = (tarefaId: string, statusAtual: string) => {
+    const novoStatus = statusAtual === 'concluida' ? 'pendente' : 'concluida';
+    atualizarStatusTarefa(tarefaId, novoStatus);
+  };
+
+  const renderTarefaItem = ({item}: {item: any}) => {
+    // Se o usuário for um DEPENDENTE
+    if (userAuth?.perfil === Perfil.Dependente) {
+      return (
+        <Card style={styles.tarefaCard}>
+          <Checkbox.Item
+            label={item.nome} // Mostra o nome da tarefa
+            status={item.status === 'concluida' ? 'checked' : 'unchecked'}
+            onPress={() => handleToggleTarefa(item.id, item.status)}
+            labelStyle={
+              item.status === 'concluida' ? styles.tarefaConcluida : styles.tarefaPendente
+            }
+          />
+          {/* Adicionando a descrição para o dependente */}
+          <Text style={styles.descricaoTarefa}>{item.descricao}</Text>
+        </Card>
+      );
+    }
+
+    // Se o usuário for um RESPONSÁVEL
+    if (userAuth?.perfil === Perfil.Responsavel) {
+      return (
+        <Card style={styles.tarefaCard}>
+          <List.Item
+            title={item.nome}
+            description={`Status: ${item.status}`} // Mostra o status como descrição
+            titleStyle={styles.tarefaPendente}
+            // Adiciona um ícone para indicar o status visualmente
+            left={() => (
+              <Icon
+                source={item.status === 'concluida' ? 'check-circle' : 'alert-circle-outline'}
+                color={item.status === 'concluida' ? 'green' : theme.colors.primary}
+                size={24}
+              />
+            )}
+          />
+        </Card>
+      );
+    }
+
+    // Retorno padrão (não deve acontecer se o usuário estiver logado)
+    return null;
+  };
+
   return (
     <View style={{...styles.container, backgroundColor: theme.colors.background}}>
-      <Text style={styles.title}>Tarefas atribuídas a {dependente?.nome}</Text>
-
-      <Button
-        mode="contained"
-        style={styles.button}
-        onPress={() =>
-          navigation.navigate('SelecionarTarefaTela', {dependenteId: dependente?.uid})
-        }>
-        Adicionar Tarefa
-      </Button>
+      <Text style={styles.title}>Tarefas de {dependente?.nome}</Text>
 
       {tarefas.length > 0 ? (
         <FlatList
           data={tarefas}
           keyExtractor={item => item.id}
-          renderItem={({item}) => (
-            <View style={styles.tarefaCard}>
-              <Text style={styles.tarefaTitulo}>{item.descricao}</Text>
-              <Text style={styles.tarefaCategoria}>Categoria: {item.categoriaId || 'N/A'}</Text>
-              <Text style={styles.tarefaPontos}>Status: {item.status}</Text>
-            </View>
-          )}
+          renderItem={renderTarefaItem} // Usa a nova função de renderização
         />
       ) : (
         <Text style={styles.emptyText}>Nenhuma tarefa atribuída até o momento.</Text>
+      )}
+
+      {userAuth?.perfil === Perfil.Responsavel && (
+        <Button
+          mode="contained"
+          style={styles.button}
+          // ## ALTERAÇÃO AQUI ##
+          onPress={() =>
+            // Mude de 'SelecionarTarefaTela' para 'SelecionarTarefa'
+            navigation.navigate('SelecionarTarefa', {dependenteId: dependente?.uid})
+          }>
+          Adicionar Tarefa
+        </Button>
       )}
     </View>
   );
@@ -65,34 +119,32 @@ const styles = StyleSheet.create({
     fontSize: 18,
     marginBottom: 15,
     fontWeight: 'bold',
+    textAlign: 'center',
   },
   button: {
-    marginBottom: 20,
-    width: '100%',
+    marginTop: 20,
   },
   tarefaCard: {
-    backgroundColor: '#ffffff',
-    borderRadius: 12,
-    padding: 15,
     marginBottom: 10,
+    paddingHorizontal: 10,
   },
-  tarefaTitulo: {
-    fontSize: 16,
-    fontWeight: 'bold',
+  descricaoTarefa: {
+    paddingLeft: 16,
+    paddingRight: 16,
+    paddingBottom: 12,
+    color: 'grey',
   },
-  tarefaCategoria: {
-    fontSize: 14,
-    color: '#555',
-    marginTop: 4,
+  tarefaPendente: {
+    textDecorationLine: 'none',
   },
-  tarefaPontos: {
-    fontSize: 14,
-    color: '#790000',
-    marginTop: 2,
+  tarefaConcluida: {
+    textDecorationLine: 'line-through',
+    color: 'grey',
   },
   emptyText: {
+    textAlign: 'center',
     fontStyle: 'italic',
     color: '#888',
-    marginTop: 10,
+    marginTop: 20,
   },
 });

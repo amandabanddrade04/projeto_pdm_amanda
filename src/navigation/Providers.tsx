@@ -4,6 +4,8 @@ import {AuthProvider} from '../context/AuthProvider';
 import {UserProvider} from '../context/UserProvider';
 import {DependenteProvider} from '../context/DependenteProvider';
 import {MD3LightTheme as DefaultTheme, MD3DarkTheme, PaperProvider} from 'react-native-paper';
+import {TarefaProvider} from '../context/TarefaProvider';
+import {CategoriaProvider} from '../context/CategoriaProvider';
 
 export const meuTemaClaro = {
   ...DefaultTheme,
@@ -37,9 +39,14 @@ export default function Providers() {
     <AuthProvider>
       <UserProvider>
         <DependenteProvider>
-          <PaperProvider theme={temaDoApp ? meuTemaClaro : meuTemaEscuro}>
-            <Navigator />
-          </PaperProvider>
+          <TarefaProvider>
+            <CategoriaProvider>
+              {/* Usando o tema claro ou escuro baseado na variável temaDoApp */}
+            <PaperProvider theme={temaDoApp ? meuTemaClaro : meuTemaEscuro}>
+              <Navigator />
+            </PaperProvider>
+            </CategoriaProvider>
+          </TarefaProvider>
         </DependenteProvider>
       </UserProvider>
     </AuthProvider>

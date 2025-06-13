@@ -5,6 +5,7 @@ import {Dialog, Text, useTheme} from 'react-native-paper';
 import auth from '@react-native-firebase/auth';
 import {AuthContext} from '../context/AuthProvider';
 import {UserContext} from '../context/UserProvider';
+import {Perfil} from '../model/Perfil';
 
 export default function Preload({navigation}: any) {
   const theme = useTheme();
@@ -27,10 +28,22 @@ export default function Preload({navigation}: any) {
     const usuario = await getUser();
     if (usuario) {
       setUserAuth(usuario);
+
+      let initialStack = 'AuthStack';
+
+      if (usuario.perfil === Perfil.Adm) {
+        // 1. Adicione a verificação para o Admin
+        initialStack = 'AdminStack';
+      } else if (usuario.perfil === Perfil.Responsavel) {
+        initialStack = 'AppStack';
+      } else if (usuario.perfil === Perfil.Dependente) {
+        initialStack = 'DependenteStack';
+      }
+
       navigation.dispatch(
         CommonActions.reset({
           index: 0,
-          routes: [{name: 'AppStack'}],
+          routes: [{name: initialStack}],
         }),
       );
     }

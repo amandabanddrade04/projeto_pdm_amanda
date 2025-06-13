@@ -11,6 +11,8 @@ import storage from '@react-native-firebase/storage';
 import {useNavigation} from '@react-navigation/native';
 import {DependenteContext} from '../context/DependenteProvider';
 import {NativeStackNavigationProp} from '@react-navigation/native-stack';
+import {Perfil} from '../model/Perfil';
+import {AuthContext} from '../context/AuthProvider';
 
 type RootStackParamList = {
   DependenteTela: {dependente?: Dependente};
@@ -21,7 +23,7 @@ type Dependente = {
   uid?: string;
   nome: string;
   email: string;
-  senha: string;
+  senha?: string;
   urlFoto?: string;
 };
 
@@ -49,6 +51,7 @@ export default function DependenteTela() {
   const [dialogVisivel, setDialogVisivel] = useState(false);
   const [confirmarExclusaoVisivel, setConfirmarExclusaoVisivel] = useState(false);
   const theme = useTheme();
+  const {signUp} = useContext<any>(AuthContext); // Supondo que você tenha um AuthContext para autenticação
 
   const {
     control,
@@ -58,7 +61,7 @@ export default function DependenteTela() {
     defaultValues: {
       nome: dependente?.nome || '',
       email: dependente?.email || '',
-      senha: dependente?.senha || '',
+      senha: '',
     },
     resolver: yupResolver(schema),
   });
@@ -77,14 +80,14 @@ export default function DependenteTela() {
     });
   };
 
-  const uploadFoto = async (): Promise<string> => {
+  const uploadFoto = async (dependenteUid: string): Promise<string> => {
     if (!urlDevice)
       return (
         dependente?.urlFoto || 'https://www.gravatar.com/avatar/00000000000000000000000000000000'
       );
     const response = await fetch(urlDevice);
     const blob = await response.blob();
-    const filename = `dependentes/${auth().currentUser?.uid}_${Date.now()}.jpg`;
+    const filename = `dependentes/${dependenteUid}.jpg`;
     await storage().ref(filename).put(blob);
     return await storage().ref(filename).getDownloadURL();
   };
@@ -93,16 +96,41 @@ export default function DependenteTela() {
     setLoading(true);
     try {
       const responsavelId = auth().currentUser?.uid;
-      if (!responsavelId) throw new Error('Usuário não autenticado');
-      const urlFoto = await uploadFoto();
-      await firestore()
-        .collection('dependentes')
-        .add({
-          ...data,
+      if (!responsavelId) throw new Error('Usuário responsável não autenticado');
+
+      // 1. Chama a função signUp com o objeto de dados correto
+      const signUpResult = await signUp({
+        email: data.email,
+        senha: data.senha,
+        nome: data.nome,
+        perfil: Perfil.Dependente,
+      });
+
+      if (signUpResult === 'ok') {
+        const dependenteAuth = auth().currentUser;
+        if (!dependenteAuth) throw new Error('Não foi possível obter o usuário recém-criado.');
+
+        const dependenteUid = dependenteAuth.uid;
+
+        // 2. Continua com o upload da foto e salvamento no Firestore
+        const urlFoto = await uploadFoto(dependenteUid);
+        await firestore().collection('dependentes').doc(dependenteUid).set({
+          nome: data.nome,
+          email: data.email,
           urlFoto,
           responsavelId,
         });
-      setMensagem({tipo: 'ok', mensagem: 'Dependente cadastrado com sucesso!'});
+
+        setMensagem({tipo: 'ok', mensagem: 'Dependente cadastrado com sucesso!'});
+
+        // IMPORTANTE: Aqui você precisará implementar a lógica para
+        // deslogar o dependente e logar o responsável novamente.
+        // Por exemplo:
+        // await auth().signOut();
+        // await relogarResponsavel(); // Função a ser criada no AuthProvider
+      } else {
+        setMensagem({tipo: 'erro', mensagem: signUpResult});
+      }
     } catch (err: any) {
       setMensagem({tipo: 'erro', mensagem: err.message});
     } finally {
@@ -115,7 +143,7 @@ export default function DependenteTela() {
     setLoading(true);
     try {
       if (!dependente?.uid) throw new Error('ID do dependente não encontrado');
-      const urlFoto = await uploadFoto();
+      const urlFoto = await uploadFoto(dependente.uid);
       await firestore()
         .collection('dependentes')
         .doc(dependente.uid)
@@ -211,6 +239,8 @@ export default function DependenteTela() {
                   onBlur={onBlur}
                   onChangeText={onChange}
                   style={styles.textinput}
+                  keyboardType="email-address"
+                  autoCapitalize="none"
                 />
               )}
             />
@@ -237,7 +267,9 @@ export default function DependenteTela() {
               mode="contained"
               style={styles.button}
               loading={loading}
-              onPress={handleSubmit(dependente ? atualizarDependente : cadastrarDependente)}>
+              onPress={handleSubmit(
+                dependente ? () => {} /* atualizarDependente */ : cadastrarDependente,
+              )}>
               {dependente ? 'Atualizar Dependente' : 'Cadastrar Dependente'}
             </Button>
 

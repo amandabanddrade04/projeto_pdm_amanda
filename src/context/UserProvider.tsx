@@ -20,8 +20,6 @@ export const UserProvider = ({children}: any) => {
       .where('perfil', '==', Perfil.Responsavel)
       .orderBy('nome')
       .onSnapshot(snapShot => {
-        //console.log(snapShot);
-        //console.log(snapShot._docs);
         if (snapShot) {
           let data: Usuario[] = [];
           snapShot.forEach(doc => {
@@ -43,8 +41,6 @@ export const UserProvider = ({children}: any) => {
       .where('perfil', '==', Perfil.Dependente)
       .orderBy('nome')
       .onSnapshot(snapShot => {
-        //console.log(snapShot);
-        //console.log(snapShot._docs);
         if (snapShot) {
           let data: Usuario[] = [];
           snapShot.forEach(doc => {
@@ -127,17 +123,21 @@ export const UserProvider = ({children}: any) => {
     }
   }
 
-  async function getUser() {
+async function getUser() {
     try {
-      let doc = await firestore().collection('usuarios').doc(auth().currentUser?.uid).get();
+      const currentUser = auth().currentUser;
+      if (!currentUser) return null;
+
+      let doc = await firestore().collection('usuarios').doc(currentUser.uid).get();
       if (doc.exists) {
         const userData = doc.data();
         if (userData) {
-          userData.codusuario = auth().currentUser?.uid;
+          // ## A CORREÇÃO ESTÁ AQUI ##
+          // Corrigido de 'codusuario' para 'uid' para manter a consistência
+          userData.uid = currentUser.uid;
           return userData;
         }
       }
-
       return null;
     } catch (e) {
       console.error('Erro ao obter usuário:', e);

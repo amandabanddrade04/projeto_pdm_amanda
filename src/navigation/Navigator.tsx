@@ -13,12 +13,14 @@ import Perfil from '../telas/PerfilTela';
 import AlteraSenha from '../telas/AlteraSenha';
 import TarefaTela from '../telas/TarefaTela';
 import Dependentes from '../telas/Dependentes';
-import DependenteTela from '../telas/DependenteTela';
 import SelecionarTarefaTela from '../telas/SelecionarTarefaTela';
 import DependentesTarefas from '../telas/DependentesTarefas';
+import GerenciarCategorias from '../telas/GerenciarCategorias';
+import GerenciarTarefas from '../telas/GerenciarTarefas';
 
 const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
+const TarefasStack = createNativeStackNavigator();
 
 const AuthStack = () => (
   <Stack.Navigator initialRouteName="Preload" screenOptions={{headerShown: false}}>
@@ -30,11 +32,18 @@ const AuthStack = () => (
   </Stack.Navigator>
 );
 
+const TarefasStackNavigator = () => (
+  <TarefasStack.Navigator screenOptions={{headerShown: false}}>
+    <TarefasStack.Screen name="ListaTarefas" component={DependentesTarefas} />
+    <TarefasStack.Screen name="SelecionarTarefa" component={SelecionarTarefaTela} />
+  </TarefasStack.Navigator>
+);
+
 const DependenteStack = () => {
   const theme = useTheme();
   return (
     <Tab.Navigator
-      initialRouteName="DependentesTarefas"
+      initialRouteName="TarefasDoDependente"
       screenOptions={{
         tabBarActiveTintColor: theme.colors.primary,
         tabBarInactiveTintColor: 'gray',
@@ -42,22 +51,22 @@ const DependenteStack = () => {
         tabBarStyle: {backgroundColor: theme.colors.surface},
       }}>
       <Tab.Screen
-        component={DependentesTarefas}
-        name="DependentesTarefas"
+        // 3. A aba "Tarefas" agora renderiza a pilha de tarefas, e não uma tela só
+        name="TarefasDoDependente"
+        component={TarefasStackNavigator}
         options={{
           tabBarLabel: 'Tarefas',
           tabBarIcon: () => (
-            <Icon source="account-tie-hat" color={theme.colors.primary} size={20} />
+            <Icon source="clipboard-list-outline" color={theme.colors.primary} size={20} />
           ),
         }}
       />
-
       <Tab.Screen
-        component={DependenteTela}
-        name="DependenteTela"
+        name="PerfilDependente"
+        component={Perfil}
         options={{
           tabBarLabel: 'Perfil',
-          tabBarIcon: () => <Icon source="menu" color={theme.colors.primary} size={20} />,
+          tabBarIcon: () => <Icon source="account" color={theme.colors.primary} size={20} />,
         }}
       />
     </Tab.Navigator>
@@ -107,6 +116,34 @@ const AppStack = () => {
   );
 };
 
+const AdminTab = createBottomTabNavigator();
+const AdminStack = () => (
+  <AdminTab.Navigator screenOptions={{headerShown: false}}>
+    <AdminTab.Screen
+      name="GerenciarTarefas"
+      component={GerenciarTarefas}
+      options={{
+        tabBarIcon: ({color, size}) => <Icon source="clipboard-list" color={color} size={size} />,
+      }}
+    />
+    <AdminTab.Screen
+      name="GerenciarCategorias"
+      component={GerenciarCategorias}
+      options={{
+        tabBarIcon: ({color, size}) => <Icon source="folder-multiple" color={color} size={size} />,
+      }}
+    />
+    <AdminTab.Screen
+      name="MenuAdmin"
+      component={Menu}
+      options={{
+        title: 'Menu',
+        tabBarIcon: ({color, size}) => <Icon source="menu" color={color} size={size} />,
+      }}
+    />
+  </AdminTab.Navigator>
+);
+
 export default function Navigator() {
   const theme = useTheme();
   return (
@@ -115,15 +152,16 @@ export default function Navigator() {
       <Stack.Navigator initialRouteName="AuthStack" screenOptions={{headerShown: false}}>
         <Stack.Screen name="AuthStack" component={AuthStack} />
         <Stack.Screen name="AppStack" component={AppStack} />
-        <Stack.Screen name="TarefaTela" component={TarefaTela} options={{presentation: 'modal'}} />
-        <Stack.Screen
-          name="DependenteStack"
-          component={DependenteStack}
-          options={{presentation: 'modal'}}
-        />
+        <Stack.Screen name="DependenteStack" component={DependenteStack} />
+        <Stack.Screen name="AdminStack" component={AdminStack} />
+
+        {/* Telas que podem ser chamadas por cima de tudo */}
         <Stack.Screen name="Perfil" component={Perfil} />
         <Stack.Screen name="AlteraSenha" component={AlteraSenha} />
-        <Stack.Screen name="SelecionarTarefaTela" component={SelecionarTarefaTela} />
+
+        {/* 4. A linha abaixo foi REMOVIDA daqui, pois agora a tela faz parte da TarefasStackNavigator
+        <Stack.Screen name="SelecionarTarefaTela" component={SelecionarTarefaTela} /> 
+        */}
       </Stack.Navigator>
     </NavigationContainer>
   );

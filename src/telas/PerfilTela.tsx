@@ -1,10 +1,10 @@
 import {yupResolver} from '@hookform/resolvers/yup';
 import {CommonActions} from '@react-navigation/native';
-import React, {useContext, useState} from 'react';
+import React, {useContext, useEffect, useState} from 'react';
 import {Controller, useForm} from 'react-hook-form';
 import {Image, ScrollView, StyleSheet, View} from 'react-native';
 import {ImageLibraryOptions, launchCamera, launchImageLibrary} from 'react-native-image-picker';
-import {Button, Dialog, Text, TextInput, useTheme} from 'react-native-paper';
+import {ActivityIndicator, Button, Dialog, Text, TextInput, useTheme} from 'react-native-paper';
 import {SafeAreaView} from 'react-native-safe-area-context';
 import * as yup from 'yup';
 import {AuthContext} from '../context/AuthProvider';
@@ -17,81 +17,74 @@ const schema = yup
   .object()
   .shape({
     nome: yup.string().required(requiredMessage).min(2, 'O nome deve ter ao menos 2 caracteres'),
-    email: yup
-      .string()
-      .required(requiredMessage)
-      .matches(/\S+@\S+\.\S+/, 'Email inválido'),
-
-    perfil: yup.string().required(requiredMessage),
   })
   .required();
 
 export default function PerfilTela({navigation}: any) {
-  const {userAuth} = useContext<any>(AuthContext);
+
+  const {userAuth, signOut} = useContext<any>(AuthContext);
+  const {update} = useContext<any>(UserContext);
   const theme = useTheme();
+  const [requisitando, setRequisitando] = useState(false);
+  const [dialogVisivel, setDialogVisivel] = useState(false);
+  const [mensagem, setMensagem] = useState({tipo: '', mensagem: ''});
+  const [urlDevice, setUrlDevice] = useState<string | undefined>('');
+
   const {
     control,
     handleSubmit,
     formState: {errors},
+    reset, // Obtenha a função 'reset' do useForm
   } = useForm<any>({
+    // Inicie com valores vazios para evitar erros
     defaultValues: {
-      nome: userAuth.nome,
-      email: userAuth.email,
-      perfil: userAuth.perfil,
+      nome: '',
+      email: '',
+      perfil: '',
     },
     mode: 'onSubmit',
     resolver: yupResolver(schema),
   });
-  const [requisitando, setRequisitando] = useState(false);
-  const [dialogErroVisivel, setDialogErroVisivel] = useState(false);
-  const [dialogExcluirVisivel, setDialogExcluirVisivel] = useState(false);
-  const [mensagem, setMensagem] = useState({tipo: '', mensagem: ''});
-  const {del} = useContext<any>(UserContext);
-  const [urlDevice, setUrlDevice] = useState<string | undefined>('');
-  const [excluindo, setExcluindo] = useState(false);
-  const [atualizando, setAtualizando] = useState(false);
+
+// Use useEffect para atualizar o formulário quando userAuth carregar ---
+  useEffect(() => {
+    if (userAuth) {
+      // Quando userAuth tiver dados, atualize os valores do formulário
+      reset({
+        nome: userAuth.nome,
+        email: userAuth.email,
+        perfil: userAuth.perfil,
+      });
+    }
+  }, [userAuth, reset]); // Este efeito roda sempre que userAuth ou reset mudarem
+
+  // --- CORREÇÃO 3: A verificação condicional agora só decide o que RENDERIZAR ---
+  if (!userAuth) {
+    return (
+      <View style={{flex: 1, justifyContent: 'center', alignItems: 'center'}}>
+        <ActivityIndicator size="large" color={theme.colors.primary} />
+      </View>
+    );
+  }
 
   async function atualizaPerfil(data: Usuario) {
     setRequisitando(true);
-    setAtualizando(true);
-    data.urlFoto = 'https://www.gravatar.com/avatar/205e460b479e2e5b48aec07710c08d50';
-
-    console.log(data);
-
-    // setRequisitando(true);
-    // setAtualizando(true);
-    // data.urlFoto = 'https://www.gravatar.com/avatar/205e460b479e2e5b48aec07710c08d50';
-
-    // console.log(data);
-    // console.log(urlDevice);
-    // const msg = await update(data, urlDevice);
-    // if (msg === 'ok') {
-    //   setMensagem({
-    //     tipo: 'ok',
-    //     mensagem:
-    //       'Show! Seu perfil foi atualizado com sucesso. Verifique seu email para validar sua conta.',
-    //   });
-    //   setDialogErroVisivel(true);
-    //   setRequisitando(false);
-    //   setAtualizando(false);
-    // } else {
-    //   setMensagem({tipo: 'erro', mensagem: msg});
-    //   setDialogErroVisivel(true);
-    //   setRequisitando(false);
-    //   setAtualizando(false);
-    // }
-  }
-
-  function avisarDaExclusaoPermanente() {
-    setDialogExcluirVisivel(true);
-  }
-
-  async function excluirConta() {
-    setDialogExcluirVisivel(false);
-    setRequisitando(true);
-    setExcluindo(true);
-    const msg = await del(userAuth.uid);
+    // Usa a função 'update' do UserContext, passando os dados e a URL da nova imagem
+    const msg = await update(data, urlDevice);
     if (msg === 'ok') {
+      setMensagem({
+        tipo: 'ok',
+        mensagem: 'Seu perfil foi atualizado com sucesso!',
+      });
+    } else {
+      setMensagem({tipo: 'erro', mensagem: msg});
+    }
+    setDialogVisivel(true);
+    setRequisitando(false);
+  }
+
+  async function sair() {
+    if (await signOut()) {
       navigation.dispatch(
         CommonActions.reset({
           index: 0,
@@ -99,41 +92,25 @@ export default function PerfilTela({navigation}: any) {
         }),
       );
     } else {
-      setMensagem({tipo: 'erro', mensagem: 'ops! algo deu errado'});
-      setDialogErroVisivel(true);
-      setRequisitando(false);
-      setExcluindo(false);
+      setMensagem({tipo: 'erro', mensagem: 'Ocorreu um erro ao tentar sair.'});
+      setDialogVisivel(true);
     }
   }
 
   const buscaNaGaleria = () => {
-    const options: ImageLibraryOptions = {
-      mediaType: 'photo',
-    };
+    const options: ImageLibraryOptions = {mediaType: 'photo'};
     launchImageLibrary(options, response => {
-      if (response.errorCode) {
-        setMensagem({tipo: 'erro', mensagem: 'Ops! Erro ao buscar a imagem.'});
-      } else if (response.didCancel) {
-        setMensagem({tipo: 'ok', mensagem: 'Ok, você cancelou.'});
-      } else {
-        const path = response.assets?.[0].uri;
-        setUrlDevice(path);
+      if (response.assets?.[0].uri) {
+        setUrlDevice(response.assets[0].uri);
       }
     });
   };
 
   function tiraFoto() {
-    const options: ImageLibraryOptions = {
-      mediaType: 'photo',
-    };
+    const options: ImageLibraryOptions = {mediaType: 'photo'};
     launchCamera(options, response => {
-      if (response.errorCode) {
-        setMensagem({tipo: 'ok', mensagem: 'Ops! Erro ao tirar foto'});
-      } else if (response.didCancel) {
-        setMensagem({tipo: 'ok', mensagem: 'Ok, você cancelou'});
-      } else {
-        const path = response.assets?.[0].uri;
-        setUrlDevice(path);
+      if (response.assets?.[0].uri) {
+        setUrlDevice(response.assets[0].uri);
       }
     });
   }
@@ -141,170 +118,104 @@ export default function PerfilTela({navigation}: any) {
   return (
     <SafeAreaView style={{...styles.container, backgroundColor: theme.colors.background}}>
       <ScrollView>
-        <>
-          <Image
-            style={styles.image}
-            source={
-              urlDevice !== ''
-                ? {uri: urlDevice}
-                : userAuth.urlFoto !== ''
-                ? {uri: userAuth.urlFoto}
-                : require('../assets/images/person.png')
-            }
-            loadingIndicatorSource={require('../assets/images/person.png')}
-          />
-          <View style={styles.divButtonsImage}>
-            <Button
-              style={styles.buttonImage}
-              mode="outlined"
-              icon="image"
-              onPress={() => buscaNaGaleria()}>
-              Galeria
-            </Button>
-            <Button
-              style={styles.buttonImage}
-              mode="outlined"
-              icon="camera"
-              onPress={() => tiraFoto()}>
-              Foto
-            </Button>
-          </View>
-
-          <Controller
-            control={control}
-            render={({field: {onChange, onBlur, value}}) => (
-              <TextInput
-                style={styles.textinput}
-                label="Nome"
-                placeholder="Digite seu nome completo"
-                mode="outlined"
-                autoCapitalize="words"
-                returnKeyType="next"
-                onBlur={onBlur}
-                onChangeText={onChange}
-                value={value}
-                right={<TextInput.Icon icon="smart-card" />}
-              />
-            )}
-            name="nome"
-          />
-          {errors.nome && (
-            <Text style={{...styles.textError, color: theme.colors.error}}>
-              {errors.nome?.message?.toString()}
-            </Text>
-          )}
-
-          <Controller
-            control={control}
-            render={({field: {onChange, onBlur, value}}) => (
-              <TextInput
-                style={styles.textinput}
-                disabled
-                label="Email"
-                placeholder="Digite seu email"
-                mode="outlined"
-                autoCapitalize="none"
-                returnKeyType="next"
-                keyboardType="email-address"
-                onBlur={onBlur}
-                onChangeText={onChange}
-                value={value}
-                right={<TextInput.Icon icon="email" />}
-              />
-            )}
-            name="email"
-          />
-          {errors.email && (
-            <Text style={{...styles.textError, color: theme.colors.error}}>
-              {errors.email?.message?.toString()}
-            </Text>
-          )}
-
-          <Controller
-            control={control}
-            render={({field: {onChange, onBlur, value}}) => (
-              <TextInput
-                style={styles.textinput}
-                disabled
-                label="Perfil"
-                placeholder="Clique para selecionar outro perfil"
-                mode="outlined"
-                autoCapitalize="none"
-                returnKeyType="go"
-                onBlur={onBlur}
-                onChangeText={onChange}
-                value={value}
-                right={<TextInput.Icon icon="account-eye" />}
-              />
-            )}
-            name="perfil"
-          />
-          {errors.perfil && (
-            <Text style={{...styles.textError, color: theme.colors.error}}>
-              {errors.perfil?.message?.toString()}
-            </Text>
-          )}
-
-          <Button
-            style={styles.button}
-            mode="contained"
-            onPress={handleSubmit(atualizaPerfil)}
-            loading={requisitando}
-            disabled={requisitando}>
-            {!atualizando ? 'Atualizar' : 'Atualizando'}
-          </Button>
-          <Button
-            style={styles.buttonOthers}
-            mode="outlined"
-            onPress={handleSubmit(avisarDaExclusaoPermanente)}
-            loading={requisitando}
-            disabled={requisitando}>
-            {!excluindo ? 'Excluir' : 'Excluindo'}
-          </Button>
-        </>
-      </ScrollView>
-      <Dialog
-        visible={dialogExcluirVisivel}
-        onDismiss={() => {
-          setDialogExcluirVisivel(false);
-        }}>
-        <Dialog.Icon icon={'alert-circle-outline'} size={60} />
-        <Dialog.Title style={styles.textDialog}>{'Ops!'}</Dialog.Title>
-        <Dialog.Content>
-          <Text style={styles.textDialog} variant="bodyLarge">
-            {'Você tem certeza que deseja excluir sua conta?\nEsta operação será irreversível.'}
-          </Text>
-        </Dialog.Content>
-        <Dialog.Actions>
-          <Button onPress={() => setDialogExcluirVisivel(false)}>Cancelar</Button>
-          <Button onPress={excluirConta}>Excluir</Button>
-        </Dialog.Actions>
-      </Dialog>
-      <Dialog
-        visible={dialogErroVisivel}
-        onDismiss={() => {
-          setDialogErroVisivel(false);
-          if (mensagem.tipo === 'ok') {
-            navigation.goBack();
+        <Image
+          style={styles.image}
+          source={
+            urlDevice
+              ? {uri: urlDevice}
+              : userAuth.urlFoto
+              ? {uri: userAuth.urlFoto}
+              : require('../assets/images/person.png')
           }
-        }}>
+          loadingIndicatorSource={require('../assets/images/person.png')}
+        />
+        <View style={styles.divButtonsImage}>
+          <Button
+            style={styles.buttonImage}
+            mode="outlined"
+            icon="image"
+            onPress={() => buscaNaGaleria()}>
+            Galeria
+          </Button>
+          <Button
+            style={styles.buttonImage}
+            mode="outlined"
+            icon="camera"
+            onPress={() => tiraFoto()}>
+            Foto
+          </Button>
+        </View>
+
+        <Controller
+          control={control}
+          name="nome"
+          render={({field: {onChange, onBlur, value}}) => (
+            <TextInput
+              style={styles.textinput}
+              label="Nome"
+              value={value}
+              onBlur={onBlur}
+              onChangeText={onChange}
+            />
+          )}
+        />
+        {errors.nome && (
+          <Text style={{...styles.textError, color: theme.colors.error}}>
+            {errors.nome?.message?.toString()}
+          </Text>
+        )}
+
+        <Controller
+          control={control}
+          name="email"
+          render={({field: {value}}) => (
+            <TextInput style={styles.textinput} disabled label="Email" value={value} />
+          )}
+        />
+
+        <Button
+          style={styles.button}
+          mode="contained"
+          onPress={handleSubmit(atualizaPerfil)}
+          loading={requisitando}
+          disabled={requisitando}>
+          Atualizar Perfil
+        </Button>
+
+        {/* --- NOVO BOTÃO DE SAIR --- */}
+        <Button
+          style={styles.buttonOthers}
+          mode="outlined"
+          onPress={sair}
+          loading={requisitando}
+          disabled={requisitando}>
+          Sair do Aplicativo
+        </Button>
+      </ScrollView>
+
+      {/* Dialog para mostrar mensagens de erro ou sucesso */}
+      <Dialog visible={dialogVisivel} onDismiss={() => setDialogVisivel(false)}>
         <Dialog.Icon
           icon={mensagem.tipo === 'ok' ? 'checkbox-marked-circle-outline' : 'alert-circle-outline'}
           size={60}
         />
         <Dialog.Title style={styles.textDialog}>
-          {mensagem.tipo === 'ok' ? 'Informação' : 'Erro'}
+          {mensagem.tipo === 'ok' ? 'Sucesso' : 'Erro'}
         </Dialog.Title>
         <Dialog.Content>
           <Text style={styles.textDialog} variant="bodyLarge">
             {mensagem.mensagem}
           </Text>
         </Dialog.Content>
+        <Dialog.Actions>
+          <Button onPress={() => setDialogVisivel(false)}>Ok</Button>
+        </Dialog.Actions>
       </Dialog>
     </SafeAreaView>
   );
 }
 
+// Estilos existentes (sem necessidade de alteração)
 const styles = StyleSheet.create({
   container: {
     flex: 1,
@@ -314,7 +225,7 @@ const styles = StyleSheet.create({
     width: 200,
     height: 200,
     alignSelf: 'center',
-    borderRadius: 200 / 2,
+    borderRadius: 100,
     marginTop: 50,
   },
   textinput: {
@@ -323,11 +234,6 @@ const styles = StyleSheet.create({
     marginTop: 20,
     backgroundColor: 'transparent',
   },
-  textEsqueceuSenha: {
-    alignSelf: 'flex-end',
-    marginTop: 20,
-  },
-  textCadastro: {},
   textError: {
     width: 350,
   },
