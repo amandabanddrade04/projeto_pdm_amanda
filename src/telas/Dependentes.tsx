@@ -18,18 +18,20 @@ export default function Dependentes({navigation}: any) {
       <List.Section style={{...styles.list, backgroundColor: theme.colors.background}}>
         <List.Subheader style={styles.subhearder}>Meus Dependentes</List.Subheader>
         <ScrollView>
-          {dependentes.map((dependente: Dependente, key: number) => (
-            <Card
-              key={key}
-              style={{...styles.card, borderColor: theme.colors.secondary}}
-              onPress={() => irParaTelaDependente(dependente)}>
-              <Card.Title
-                title={dependente.nome}
-                subtitle={dependente.email}
-                left={() => <Avatar.Image size={40} source={{uri: dependente.urlFoto}} />}
-              />
-            </Card>
-          ))}
+          <>
+            {dependentes.map((dependente: Dependente, key: number) => (
+              <Card
+                key={key}
+                style={{...styles.card, borderColor: theme.colors.secondary}}
+                onPress={() => irParaTelaDependente(dependente)}>
+                <Card.Title
+                  title={dependente.nome}
+                  subtitle={dependente.email}
+                  left={() => <Avatar.Image size={40} source={{uri: dependente.urlFoto}} />}
+                />
+              </Card>
+            ))}
+          </>
         </ScrollView>
       </List.Section>
       <FAB icon="plus" style={styles.fab} onPress={() => irParaTelaDependente(null)} />

@@ -159,9 +159,7 @@ export default function Navigator() {
         <Stack.Screen name="Perfil" component={Perfil} />
         <Stack.Screen name="AlteraSenha" component={AlteraSenha} />
 
-        {/* 4. A linha abaixo foi REMOVIDA daqui, pois agora a tela faz parte da TarefasStackNavigator
-        <Stack.Screen name="SelecionarTarefaTela" component={SelecionarTarefaTela} /> 
-        */}
+
       </Stack.Navigator>
     </NavigationContainer>
   );

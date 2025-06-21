@@ -3,13 +3,11 @@ import {View, Text, FlatList, StyleSheet} from 'react-native';
 import {Button, Card, Checkbox, Icon, List, useTheme} from 'react-native-paper';
 import {useNavigation} from '@react-navigation/native';
 import firestore from '@react-native-firebase/firestore';
-import {DependenteContext} from '../context/DependenteProvider';
 import {AuthContext} from '../context/AuthProvider';
 import {TarefaContext} from '../context/TarefaProvider';
 import {Perfil} from '../model/Perfil';
 
 export default function DependentesTarefas() {
-  const {dependente} = useContext<any>(DependenteContext);
   const {userAuth} = useContext<any>(AuthContext);
   const {atualizarStatusTarefa} = useContext<any>(TarefaContext);
 
@@ -18,17 +16,20 @@ export default function DependentesTarefas() {
   const theme = useTheme();
 
   useEffect(() => {
-    if (dependente?.uid) {
+    console.log('Dependente selecionado:', userAuth?.dependente);
+    if (userAuth?.uid) {
+      console.log('Dependente selecionado:', userAuth.uid);
       const unsubscribe = firestore()
         .collection('tarefas_atribuidas')
-        .where('dependenteId', '==', dependente.uid)
+        .where('dependenteId', '==', userAuth.uid)
         .onSnapshot(snapshot => {
+          console.log('Tarefas atualizadas:', snapshot.docs.length);
           const data = snapshot.docs.map(doc => ({id: doc.id, ...doc.data()}));
           setTarefas(data);
         });
       return unsubscribe;
     }
-  }, [dependente]);
+  }, [userAuth]);
 
   // Função para ser chamada quando o checkbox for pressionado
   const handleToggleTarefa = (tarefaId: string, statusAtual: string) => {
@@ -82,7 +83,7 @@ export default function DependentesTarefas() {
 
   return (
     <View style={{...styles.container, backgroundColor: theme.colors.background}}>
-      <Text style={styles.title}>Tarefas de {dependente?.nome}</Text>
+      <Text style={styles.title}>Tarefas de {userAuth?.nome}</Text>
 
       {tarefas.length > 0 ? (
         <FlatList
@@ -101,7 +102,7 @@ export default function DependentesTarefas() {
           // ## ALTERAÇÃO AQUI ##
           onPress={() =>
             // Mude de 'SelecionarTarefaTela' para 'SelecionarTarefa'
-            navigation.navigate('SelecionarTarefa', {dependenteId: dependente?.uid})
+            navigation.navigate('SelecionarTarefa', {dependenteId: userAuth?.uid})
           }>
           Adicionar Tarefa
         </Button>

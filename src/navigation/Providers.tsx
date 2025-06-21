@@ -41,7 +41,6 @@ export default function Providers() {
         <DependenteProvider>
           <TarefaProvider>
             <CategoriaProvider>
-              {/* Usando o tema claro ou escuro baseado na variável temaDoApp */}
             <PaperProvider theme={temaDoApp ? meuTemaClaro : meuTemaEscuro}>
               <Navigator />
             </PaperProvider>

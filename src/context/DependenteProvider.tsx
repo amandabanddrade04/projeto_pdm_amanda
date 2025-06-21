@@ -11,10 +11,8 @@ export const DependenteContext = createContext<any>({});
 
 export const DependenteProvider = ({children}: any) => {
   const [dependentes, setDependentes] = useState<Dependente[]>([]);
-  const [dependente, setDependente] = useState<Dependente | null>(null);
-
-  const {userAuth} = useContext(AuthContext);
-  const {getUser} = useContext(UserContext);
+  const {userAuth} = useContext<any>(AuthContext);
+  const {getUser} = useContext<any>(UserContext);
 
   useEffect(() => {
     if (!userAuth) {
@@ -43,6 +41,7 @@ export const DependenteProvider = ({children}: any) => {
                 nome: doc.data().nome,
                 email: doc.data().email,
                 urlFoto: doc.data().urlFoto,
+                perfil: Perfil.Dependente,
                 responsavelId: doc.data().responsavelId,
               });
             });
@@ -58,6 +57,7 @@ export const DependenteProvider = ({children}: any) => {
               nome: docData?.nome,
               email: docData?.email,
               urlFoto: docData?.urlFoto,
+              perfil: Perfil.Dependente,
               responsavelId: docData?.responsavelId,
             };
             setDependentes([data]);
@@ -142,7 +142,7 @@ export const DependenteProvider = ({children}: any) => {
   }
 
   return (
-    <DependenteContext.Provider value={{dependentes, salvar, excluir, setDependente, dependente}}>
+    <DependenteContext.Provider value={{dependentes, salvar, excluir}}>
       {children}
     </DependenteContext.Provider>
   );

@@ -1,13 +1,9 @@
-// Em: src/telas/SelecionarTarefaTela.tsx
-
 import React, {useEffect, useState} from 'react';
 import {ScrollView, StyleSheet} from 'react-native';
-// 1. Importe o Dialog
-import {Text, Button, Checkbox, List, Dialog, Icon} from 'react-native-paper';
+import {Text, Button, Checkbox, List, Dialog} from 'react-native-paper';
 import firestore from '@react-native-firebase/firestore';
 import {useNavigation, useRoute, RouteProp} from '@react-navigation/native';
 
-// (Seus 'types' aqui permanecem os mesmos)
 type RootStackParamList = {
   SelecionarTarefa: {
     dependenteId: string;
@@ -28,12 +24,10 @@ export default function SelecionarTarefaTela() {
   const [tarefasPorCategoria, setTarefasPorCategoria] = useState<Record<string, Tarefa[]>>({});
   const [selecionadas, setSelecionadas] = useState<Tarefa[]>([]);
 
-  // 2. Adicione os estados para o Dialog e o carregamento
   const [salvando, setSalvando] = useState(false);
   const [dialogVisivel, setDialogVisivel] = useState(false);
   const [mensagem, setMensagem] = useState({tipo: '', texto: ''});
 
-  // O useEffect para carregar as tarefas permanece o mesmo...
   useEffect(() => {
     const carregarTarefas = async () => {
       const categoriasSnap = await firestore().collection('categorias').get();
@@ -70,7 +64,6 @@ export default function SelecionarTarefaTela() {
     });
   };
 
-  // 3. Modifique a função salvarTarefas para usar try/catch e o Dialog
   const salvarTarefas = async () => {
     if (selecionadas.length === 0) return;
 
@@ -103,7 +96,6 @@ export default function SelecionarTarefaTela() {
 
   const fecharDialog = () => {
     setDialogVisivel(false);
-    // Se a operação foi um sucesso, volte para a tela anterior
     if (mensagem.tipo === 'ok') {
       navigation.goBack();
     }
@@ -112,7 +104,6 @@ export default function SelecionarTarefaTela() {
   return (
     <>
       <ScrollView style={styles.container}>
-        {/* Seu List.AccordionGroup permanece aqui... */}
         <List.AccordionGroup>
           {Object.entries(tarefasPorCategoria).map(([categoriaNome, tarefas]) => (
             <List.Accordion
@@ -133,7 +124,6 @@ export default function SelecionarTarefaTela() {
           ))}
         </List.AccordionGroup>
 
-        {/* 4. Atualize o botão para mostrar o estado de carregamento */}
         <Button
           mode="contained"
           onPress={salvarTarefas}
@@ -144,7 +134,6 @@ export default function SelecionarTarefaTela() {
         </Button>
       </ScrollView>
 
-      {/* 5. Adicione o componente Dialog no final */}
       <Dialog visible={dialogVisivel} onDismiss={fecharDialog}>
         <Dialog.Title style={styles.dialogTitle}>
           {mensagem.tipo === 'ok' ? 'Sucesso!' : 'Ops!'}

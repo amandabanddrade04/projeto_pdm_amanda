@@ -1,11 +1,10 @@
-// Em: src/telas/GerenciarTarefas.tsx
-
 import React, {useContext, useState} from 'react';
-import {View, FlatList, StyleSheet, ScrollView} from 'react-native';
-import {List, TextInput, Button, Text, useTheme} from 'react-native-paper';
+import {View, FlatList, StyleSheet} from 'react-native';
+import {List, TextInput, Button, Text, useTheme, Dialog} from 'react-native-paper';
 import {Picker} from '@react-native-picker/picker';
 import {TarefaContext} from '../context/TarefaProvider';
 import {CategoriaContext} from '../context/CategoriaProvider';
+import {Tarefa} from '../model/Tarefa';
 
 export default function GerenciarTarefas() {
   const {tarefas, salvar} = useContext(TarefaContext);
@@ -15,77 +14,92 @@ export default function GerenciarTarefas() {
   const [descricao, setDescricao] = useState('');
   const [categoriaId, setCategoriaId] = useState('');
   const [loading, setLoading] = useState(false);
+  const [dialogVisivel, setDialogVisivel] = useState(false);
+  const [dialogMensagem, setDialogMensagem] = useState('');
   const theme = useTheme();
 
   const handleAddTask = async () => {
     if (!nome.trim() || !descricao.trim() || !categoriaId) {
-      alert('Por favor, preencha todos os campos.');
+      setDialogMensagem('Por favor, preencha todos os campos.');
+      setDialogVisivel(true);
       return;
     }
     setLoading(true);
-    // A função salvar do seu TarefaProvider precisa ser ajustada para aceitar um objeto assim
-    // ou você cria uma função 'addTarefa' nova. Vamos usar a 'salvar' por enquanto.
-    const novaTarefa = {nome, descricao, categoriaId, uid: new Date().getTime().toString()};
+    const novaTarefa: Tarefa = {
+      nome,
+      descricao,
+      categoriaId,
+      id: '',
+      uid: new Date().getTime().toString(),
+    };
     const result = await salvar(novaTarefa);
     if (result === 'ok') {
-      alert('Tarefa adicionada com sucesso!');
+      setDialogMensagem('Tarefa adicionada com sucesso!');
       setNome('');
       setDescricao('');
       setCategoriaId('');
     } else {
-      alert('Erro ao adicionar tarefa.');
+      setDialogMensagem('Erro ao adicionar tarefa.');
     }
+    setDialogVisivel(true);
     setLoading(false);
   };
 
   return (
-    <ScrollView style={{...styles.container, backgroundColor: theme.colors.background}}>
+    <View style={{...styles.container, backgroundColor: theme.colors.background}}>
       <Text variant="headlineSmall" style={styles.title}>
         Gerenciar Tarefas
       </Text>
-      <View style={styles.formContainer}>
-        <TextInput
-          label="Nome da Tarefa"
-          value={nome}
-          onChangeText={setNome}
-          style={styles.input}
-          mode="outlined"
-        />
-        <TextInput
-          label="Descrição"
-          value={descricao}
-          onChangeText={setDescricao}
-          style={styles.input}
-          mode="outlined"
-          multiline
-        />
-        <View style={styles.pickerContainer}>
-          <Picker
-            selectedValue={categoriaId}
-            onValueChange={itemValue => setCategoriaId(itemValue)}>
-            <Picker.Item label="Selecione uma categoria..." value="" />
-            {categorias.map(cat => (
-              <Picker.Item key={cat.id} label={cat.nome} value={cat.id} />
-            ))}
-          </Picker>
-        </View>
-        <Button mode="contained" onPress={handleAddTask} loading={loading} disabled={loading}>
-          Adicionar Tarefa
-        </Button>
-      </View>
+      <TextInput
+        label="Nome da Tarefa"
+        value={nome}
+        onChangeText={t => setNome(t)}
+        style={styles.input}
+        mode="outlined"
+      />
+      <TextInput
+        label="Descrição"
+        value={descricao}
+        onChangeText={setDescricao}
+        style={styles.input}
+        mode="outlined"
+        multiline
+      />
+      <Picker selectedValue={categoriaId} onValueChange={itemValue => setCategoriaId(itemValue)}>
+        <Picker.Item label="Selecione uma categoria..." value="" />
+        {categorias.map(cat => (
+          <Picker.Item key={cat.id} label={cat.nome} value={cat.id} />
+        ))}
+      </Picker>
+      <Button mode="contained" onPress={handleAddTask} loading={loading} disabled={loading}>
+        Adicionar Tarefa
+      </Button>
+
       <Text variant="titleMedium">Tarefas Existentes:</Text>
       <FlatList
         data={tarefas}
         keyExtractor={item => item.uid}
         renderItem={({item}) => <List.Item title={item.nome} description={item.descricao} />}
-        style={{height: 300}} // Apenas para visualização em ScrollView
+        contentContainerStyle={styles.listContent}
       />
-    </ScrollView>
+      <Dialog visible={dialogVisivel} onDismiss={() => setDialogVisivel(false)}>
+        <Dialog.Title>Aviso</Dialog.Title>
+        <Dialog.Content>
+          <Text>{dialogMensagem}</Text>
+        </Dialog.Content>
+        <Dialog.Actions>
+          <Button onPress={() => setDialogVisivel(false)}>Ok</Button>
+        </Dialog.Actions>
+      </Dialog>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {flex: 1, padding: 20},
+  container: {flex: 1},
+  listContent: {3
+    padding: 20,
+  },
   title: {textAlign: 'center', marginBottom: 20},
   formContainer: {marginBottom: 30},
   input: {marginBottom: 10},

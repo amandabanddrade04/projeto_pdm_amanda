@@ -2,7 +2,7 @@ import {Perfil} from './Perfil';
 import {Usuario} from './Usuario';
 
 export class Dependente extends Usuario {
-  public responsavel: Usuario;
+  public responsavelId: string;
 
   constructor(
     uid: string,
@@ -10,10 +10,10 @@ export class Dependente extends Usuario {
     email: string,
     urlFoto: string,
     perfil: Perfil,
-    responsavel: Usuario,
+    responsavelId: string,
     senha?: string,
   ) {
     super(uid, nome, email, urlFoto, perfil, senha);
-    this.responsavel = responsavel;
+    this.responsavelId = responsavelId;
   }
 }

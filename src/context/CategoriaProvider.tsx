@@ -2,7 +2,15 @@ import React, {createContext, useEffect, useState} from 'react';
 import firestore from '@react-native-firebase/firestore';
 import { Categoria } from '../model/Categoria';
 
-export const CategoriaContext = createContext<any>({});
+type CategoriaContextType = {
+  categorias: Categoria[];
+  addCategoria: (nomeCategoria: string) => Promise<'ok' | 'erro'>;
+};
+
+export const CategoriaContext = createContext<CategoriaContextType>({
+  categorias: [],
+  addCategoria: async () => 'erro', 
+});
 
 export const CategoriaProvider = ({children}: any) => {
   const [categorias, setCategorias] = useState<Categoria[]>([]);
@@ -25,7 +33,7 @@ export const CategoriaProvider = ({children}: any) => {
     return () => unsubscribe();
   }, []);
 
-  const addCategoria = async (nomeCategoria: string) => {
+  const addCategoria = async (nomeCategoria: string): Promise<'ok' | 'erro'> => {
     try {
       await firestore().collection('categorias').add({
         nome: nomeCategoria,
