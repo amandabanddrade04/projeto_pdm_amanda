@@ -4,7 +4,7 @@ import React from 'react';
 import SignIn from '../telas/SignIn';
 import {Icon, useTheme} from 'react-native-paper';
 import {createBottomTabNavigator} from '@react-navigation/bottom-tabs';
-import {StatusBar} from 'react-native';
+import {StatusBar, StyleSheet} from 'react-native';
 import Preload from '../telas/Preload';
 import SignUp from '../telas/SignUp';
 import EsqueceuSenha from '../telas/EsqueceuSenha';
@@ -17,6 +17,7 @@ import SelecionarTarefaTela from '../telas/SelecionarTarefaTela';
 import DependentesTarefas from '../telas/DependentesTarefas';
 import GerenciarCategorias from '../telas/GerenciarCategorias';
 import GerenciarTarefas from '../telas/GerenciarTarefas';
+import {View} from 'react-native';
 
 const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
@@ -45,10 +46,19 @@ const DependenteStack = () => {
     <Tab.Navigator
       initialRouteName="TarefasDoDependente"
       screenOptions={{
-        tabBarActiveTintColor: theme.colors.primary,
-        tabBarInactiveTintColor: 'gray',
+        tabBarActiveTintColor: '#36A1D9',
+        tabBarInactiveTintColor: '#CC6668',
         headerShown: false,
-        tabBarStyle: {backgroundColor: theme.colors.surface},
+        tabBarShowLabel: false,
+        tabBarStyle: {
+          position: 'absolute',
+          bottom: 1,
+          left: 20,
+          right: 20,
+          backgroundColor: '#ffffff',
+          height: 60,
+          ...styles.shadow,
+        },
       }}>
       <Tab.Screen
         // 3. A aba "Tarefas" agora renderiza a pilha de tarefas, e não uma tela só
@@ -79,18 +89,30 @@ const AppStack = () => {
     <Tab.Navigator
       initialRouteName="Dependentes"
       screenOptions={{
-        tabBarActiveTintColor: theme.colors.primary,
-        tabBarInactiveTintColor: 'gray',
+        tabBarActiveTintColor: '#36A1D9',
+        tabBarInactiveTintColor: '#CC6668',
         headerShown: false,
-        tabBarStyle: {backgroundColor: theme.colors.surface},
+        tabBarShowLabel: false,
+        tabBarStyle: {
+          position: 'absolute',
+          bottom: 1,
+          left: 20,
+          right: 20,
+          backgroundColor: '#ffffff',
+          height: 55,
+          paddingTop: 10,
+          ...styles.shadow,
+        },
       }}>
       <Tab.Screen
         component={Dependentes}
         name="Dependentes"
         options={{
           tabBarLabel: 'Dependentes',
-          tabBarIcon: () => (
-            <Icon source="account-tie-hat" color={theme.colors.primary} size={20} />
+          tabBarIcon: ({color, size}) => (
+            <View style={{alignItems: 'center', justifyContent: 'center'}}>
+              <Icon source="home" color={color} size={size} />,
+            </View>
           ),
         }}
       />
@@ -99,8 +121,10 @@ const AppStack = () => {
         name="Tarefas"
         options={{
           tabBarLabel: 'Tarefas',
-          tabBarIcon: () => (
-            <Icon source="office-building-outline" color={theme.colors.primary} size={20} />
+          tabBarIcon: ({color, size}) => (
+            <View style={{alignItems: 'center', justifyContent: 'center'}}>
+              <Icon source="clipboard-list-outline" color={color} size={size} />
+            </View>
           ),
         }}
       />
@@ -109,12 +133,29 @@ const AppStack = () => {
         name="Menu"
         options={{
           tabBarLabel: 'Menu',
-          tabBarIcon: () => <Icon source="menu" color={theme.colors.primary} size={20} />,
+          tabBarIcon: ({color, size}) => (
+            <View style={{alignItems: 'center', justifyContent: 'center'}}>
+              <Icon source="account-circle-outline" color={color} size={size} />
+            </View>
+          ),
         }}
       />
     </Tab.Navigator>
   );
 };
+
+const styles = StyleSheet.create({
+  shadow: {
+    shadowColor: '#7F5DF0',
+    shadowOffset: {
+      width: 0,
+      height: 10,
+    },
+    shadowOpacity: 0.25,
+    shadowRadius: 3.5,
+    elevation: 5,
+  },
+});
 
 const AdminTab = createBottomTabNavigator();
 const AdminStack = () => (
@@ -158,8 +199,6 @@ export default function Navigator() {
         {/* Telas que podem ser chamadas por cima de tudo */}
         <Stack.Screen name="Perfil" component={Perfil} />
         <Stack.Screen name="AlteraSenha" component={AlteraSenha} />
-
-
       </Stack.Navigator>
     </NavigationContainer>
   );

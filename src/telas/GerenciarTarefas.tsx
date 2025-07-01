@@ -96,12 +96,26 @@ export default function GerenciarTarefas() {
 }
 
 const styles = StyleSheet.create({
-  container: {flex: 1},
-  listContent: {3
+  container: {
+    flex: 1,
+  },
+  listContent: {
     padding: 20,
   },
-  title: {textAlign: 'center', marginBottom: 20},
-  formContainer: {marginBottom: 30},
-  input: {marginBottom: 10},
-  pickerContainer: {borderWidth: 1, borderColor: 'grey', borderRadius: 4, marginBottom: 10},
+  title: {
+    textAlign: 'center',
+    marginBottom: 20,
+  },
+  formContainer: {
+    marginBottom: 30,
+  },
+  input: {
+    marginBottom: 10,
+  },
+  pickerContainer: {
+    borderWidth: 1,
+    borderColor: 'grey',
+    borderRadius: 4,
+    marginBottom: 10,
+  },
 });

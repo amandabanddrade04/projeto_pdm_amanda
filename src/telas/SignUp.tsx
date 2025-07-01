@@ -8,6 +8,7 @@ import * as yup from 'yup';
 import {AuthContext} from '../context/AuthProvider';
 import {Usuario} from '../model/Usuario';
 import {Perfil} from '../model/Perfil';
+import LinearGradient from 'react-native-linear-gradient';
 
 const requiredMessage = 'Campo obrigatório';
 
@@ -85,11 +86,12 @@ export default function SignUp({navigation}: any) {
   }
 
   return (
-    <SafeAreaView style={{...styles.container, backgroundColor: theme.colors.background}}>
-      <ScrollView>
-        <>
+    <LinearGradient
+      colors={['#72CFFF', '#FF9B9D']} // As cores do seu gradiente
+      style={styles.gradientContainer}>
+      <SafeAreaView style={styles.safeArea}>
+        <ScrollView contentContainerStyle={styles.scrollContainer}>
           <Image style={styles.image} source={require('../assets/images/LOGO.png')} />
-
           <Controller
             control={control}
             render={({field: {onChange, onBlur, value}}) => (
@@ -212,33 +214,38 @@ export default function SignUp({navigation}: any) {
             mode="contained"
             onPress={handleSubmit(onSubmit)}
             loading={requisitando}
-            disabled={requisitando}>
+            disabled={requisitando}
+            labelStyle={{fontWeight: 'bold'}}
+            contentStyle={{paddingVertical: 4, paddingHorizontal: 40}}
+            buttonColor="#F2EF7B">
             {!requisitando ? 'Cadastrar' : 'Cadastrando'}
           </Button>
-        </>
-      </ScrollView>
-      <Dialog
-        visible={dialogVisivel}
-        onDismiss={() => {
-          setDialogVisivel(false);
-          if (mensagem.tipo === 'ok') {
-            navigation.goBack();
-          }
-        }}>
-        <Dialog.Icon
-          icon={mensagem.tipo === 'ok' ? 'checkbox-marked-circle-outline' : 'alert-circle-outline'}
-          size={60}
-        />
-        <Dialog.Title style={styles.textDialog}>
-          {mensagem.tipo === 'ok' ? 'Informação' : 'Erro'}
-        </Dialog.Title>
-        <Dialog.Content>
-          <Text style={styles.textDialog} variant="bodyLarge">
-            {mensagem.mensagem}
-          </Text>
-        </Dialog.Content>
-      </Dialog>
-    </SafeAreaView>
+        </ScrollView>
+        <Dialog
+          visible={dialogVisivel}
+          onDismiss={() => {
+            setDialogVisivel(false);
+            if (mensagem.tipo === 'ok') {
+              navigation.goBack();
+            }
+          }}>
+          <Dialog.Icon
+            icon={
+              mensagem.tipo === 'ok' ? 'checkbox-marked-circle-outline' : 'alert-circle-outline'
+            }
+            size={60}
+          />
+          <Dialog.Title style={styles.textDialog}>
+            {mensagem.tipo === 'ok' ? 'Informação' : 'Erro'}
+          </Dialog.Title>
+          <Dialog.Content>
+            <Text style={styles.textDialog} variant="bodyLarge">
+              {mensagem.mensagem}
+            </Text>
+          </Dialog.Content>
+        </Dialog>
+      </SafeAreaView>
+    </LinearGradient>
   );
 }
 
@@ -248,21 +255,19 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   image: {
-    width: 200,
+    width: 150,
     height: 200,
     alignSelf: 'center',
-    borderRadius: 200 / 2,
     marginTop: 50,
   },
   textinput: {
     width: 350,
     height: 50,
     marginTop: 20,
-    backgroundColor: 'transparent',
+    backgroundColor: '#FFFFFF',
   },
   textEsqueceuSenha: {
     alignSelf: 'flex-end',
-    marginTop: 20,
   },
   textCadastro: {},
   textError: {
@@ -291,5 +296,19 @@ const styles = StyleSheet.create({
     marginTop: 15,
     marginBottom: 20,
     alignItems: 'center',
+  },
+  gradientContainer: {
+    flex: 1,
+  },
+  safeArea: {
+    flex: 1,
+    backgroundColor: 'transparent',
+  },
+
+  scrollContainer: {
+    flexGrow: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 20,
   },
 });

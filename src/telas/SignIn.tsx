@@ -7,6 +7,7 @@ import {Controller, useForm} from 'react-hook-form';
 import {yupResolver} from '@hookform/resolvers/yup';
 import * as yup from 'yup';
 import {CommonActions} from '@react-navigation/native';
+import LinearGradient from 'react-native-linear-gradient';
 
 const requiredMessage = 'Campo obrigatório';
 
@@ -86,9 +87,11 @@ function SignIn({navigation}: any) {
   }
 
   return (
-    <SafeAreaView style={{...styles.container, backgroundColor: theme.colors.background}}>
-      <ScrollView>
-        <>
+    <LinearGradient
+      colors={['#72CFFF', '#FF9B9D']} // As cores do seu gradiente
+      style={styles.gradientContainer}>
+      <SafeAreaView style={styles.safeArea}>
+        <ScrollView contentContainerStyle={styles.scrollContainer}>
           <Image style={styles.image} source={require('../assets/images/LOGO.png')} />
           <Controller
             control={control}
@@ -160,7 +163,10 @@ function SignIn({navigation}: any) {
             mode="contained"
             onPress={handleSubmit(onSubmit)}
             loading={logando}
-            disabled={logando}>
+            disabled={logando}
+            labelStyle={{fontWeight: 'bold'}}
+            contentStyle={{paddingVertical: 4, paddingHorizontal: 40}}
+            buttonColor="#F2EF7B">
             {!logando ? 'Entrar' : 'Entrando'}
           </Button>
 
@@ -175,18 +181,18 @@ function SignIn({navigation}: any) {
               Cadastre-se
             </Text>
           </View>
-        </>
-      </ScrollView>
-      <Dialog visible={dialogVisivel} onDismiss={() => setDialogVisivel(false)}>
-        <Dialog.Icon icon="alert-circle-outline" size={60} />
-        <Dialog.Title style={styles.textDialog}>Erro</Dialog.Title>
-        <Dialog.Content>
-          <Text style={styles.textDialog} variant="bodyLarge">
-            {mensagemErro}
-          </Text>
-        </Dialog.Content>
-      </Dialog>
-    </SafeAreaView>
+        </ScrollView>
+        <Dialog visible={dialogVisivel} onDismiss={() => setDialogVisivel(false)}>
+          <Dialog.Icon icon="alert-circle-outline" size={60} />
+          <Dialog.Title style={styles.textDialog}>Erro</Dialog.Title>
+          <Dialog.Content>
+            <Text style={styles.textDialog} variant="bodyLarge">
+              {mensagemErro}
+            </Text>
+          </Dialog.Content>
+        </Dialog>
+      </SafeAreaView>
+    </LinearGradient>
   );
 }
 
@@ -198,18 +204,16 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   image: {
-    width: 200,
+    width: 150,
     height: 200,
     alignSelf: 'center',
-    borderRadius: 200 / 2,
-    marginTop: 100,
-    marginBottom: 40,
+    marginTop: 50,
   },
   textinput: {
     width: 350,
     height: 50,
     marginTop: 20,
-    backgroundColor: 'transparent',
+    backgroundColor: '#FFFFFF',
   },
   textEsqueceuSenha: {
     alignSelf: 'flex-end',
@@ -232,5 +236,19 @@ const styles = StyleSheet.create({
 
   textDialog: {
     textAlign: 'center',
+  },
+  gradientContainer: {
+    flex: 1,
+  },
+  safeArea: {
+    flex: 1,
+    backgroundColor: 'transparent',
+  },
+
+  scrollContainer: {
+    flexGrow: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 20,
   },
 });

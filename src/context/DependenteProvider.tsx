@@ -7,10 +7,19 @@ import {AuthContext} from './AuthProvider';
 import {UserContext} from './UserProvider';
 import {Perfil} from '../model/Perfil';
 
-export const DependenteContext = createContext<any>({});
+const defaultValue = {
+  dependentes: [],
+  dependente: null,
+  setDependente: () => {},
+  salvar: async () => 'erro',
+  excluir: async () => 'erro',
+};
+
+export const DependenteContext = createContext(defaultValue);
 
 export const DependenteProvider = ({children}: any) => {
   const [dependentes, setDependentes] = useState<Dependente[]>([]);
+  const [dependente, setDependente] = useState<Dependente | null>(null);
   const {userAuth} = useContext<any>(AuthContext);
   const {getUser} = useContext<any>(UserContext);
 
@@ -142,7 +151,7 @@ export const DependenteProvider = ({children}: any) => {
   }
 
   return (
-    <DependenteContext.Provider value={{dependentes, salvar, excluir}}>
+    <DependenteContext.Provider value={{dependentes, dependente, setDependente, salvar, excluir}}>
       {children}
     </DependenteContext.Provider>
   );

@@ -3,36 +3,38 @@ import Navigator from './Navigator';
 import {AuthProvider} from '../context/AuthProvider';
 import {UserProvider} from '../context/UserProvider';
 import {DependenteProvider} from '../context/DependenteProvider';
-import {MD3LightTheme as DefaultTheme, MD3DarkTheme, PaperProvider} from 'react-native-paper';
+import {MD3LightTheme as DefaultTheme, PaperProvider} from 'react-native-paper';
 import {TarefaProvider} from '../context/TarefaProvider';
 import {CategoriaProvider} from '../context/CategoriaProvider';
 
-export const meuTemaClaro = {
-  ...DefaultTheme,
-  colors: {
-    ...DefaultTheme.colors,
-    primary: '#000000', // cor principal
-    secondary: '#000000', // cor secundária
-    background: '#ffffff',
-    surface: '#ffffff',
-    text: '#000000',
-    onPrimary: '#FFFFFF',
-  },
+const themeColors = {
+  primary: '#CC6668',
+  secondary: '#F2EF7B',
+  background: '#FDF7F8', // Um fundo branco com um leve tom de rosa
+  text: '#343A40', // Texto escuro, quase preto
+  surface: '#FFFFFF', // Fundo de cards e inputs
+  outline: '#DEE2E6', // Borda de inputs
+  placeholder: '#6C757D', // Cor para textos de placeholder
 };
 
-export const meuTemaEscuro = {
-  ...MD3DarkTheme,
+export const appTheme = {
+  ...DefaultTheme,
+  roundness: 16, // Bordas mais arredondadas
   colors: {
-    ...MD3DarkTheme.colors,
-    primary: '#81C784',
-    secondary: '#FFD54F',
-    background: '#303030',
-    surface: '#424242',
-    text: '#FFFFFF',
-    onPrimary: '#000000',
+    ...DefaultTheme.colors,
+    primary: themeColors.primary,
+    onPrimary: themeColors.text, // Cor do texto em cima da cor primária
+    background: themeColors.background,
+    surface: themeColors.surface,
+    text: themeColors.text,
+    onSurface: themeColors.text,
+    outline: themeColors.outline,
+    placeholder: themeColors.placeholder,
+    primaryContainer: themeColors.primary,
+    secondaryContainer: themeColors.secondary,
+    onSecondaryContainer: '#FFFFFF',
   },
 };
-const temaDoApp = true;
 
 export default function Providers() {
   return (
@@ -41,9 +43,9 @@ export default function Providers() {
         <DependenteProvider>
           <TarefaProvider>
             <CategoriaProvider>
-            <PaperProvider theme={temaDoApp ? meuTemaClaro : meuTemaEscuro}>
-              <Navigator />
-            </PaperProvider>
+              <PaperProvider theme={appTheme}>
+                <Navigator />
+              </PaperProvider>
             </CategoriaProvider>
           </TarefaProvider>
         </DependenteProvider>
